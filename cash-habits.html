@@ -15,7 +15,6 @@
     --ring:#2a2f3a; --shadow:#00000055;
     --good:#1b8f63; --good-d:#117d57;
     --bad:#b0232c; --bad-d:#7f1820;
-    --warn:#7c5a13; --warn-d:#66490f;
   }
   html,body{height:100%}
   body{
@@ -31,17 +30,19 @@
   }
   .row{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
   .row.split{justify-content:space-between}
+  .center{justify-content:center}
   .grow{flex:1}
   .balance{font-weight:800; font-size:26px; letter-spacing:.2px}
   .sub{color:var(--muted); font-size:12px}
   .section-title{margin:18px 2px 6px; color:var(--muted); font-weight:700; font-size:13px; letter-spacing:.35px}
+
   .card{
     background:linear-gradient(180deg, var(--card), #141821);
-    border:1px solid var(--ring); border-radius:16px; padding:14px;
+    border:2px solid var(--ring); border-radius:16px; padding:14px;
     box-shadow: 0 12px 24px var(--shadow); margin:12px 0;
   }
   .card h3{margin:0 0 4px; font-size:18px}
-  .hint{color:var(--muted); font-size:12px}
+
   .tag{
     display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px;
     background:#0f1320; border:1px solid #1a2030; color:#cfd6e6; font-size:12px; font-weight:700;
@@ -54,18 +55,18 @@
   .number{appearance:textfield}
   .number::-webkit-outer-spin-button,.number::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
 
-  /* Box buttons */
+  /* Square action buttons */
   .boxbtn{
     appearance:none; -webkit-appearance:none; cursor:pointer;
     border:2px solid transparent; color:#fff;
-    padding:14px; border-radius:14px; font-weight:800; font-size:18px;
-    display:inline-grid; place-items:center; min-width:64px; min-height:56px;
-    box-shadow: 0 6px 18px var(--shadow); user-select:none; transition:.15s transform ease, .15s background ease;
+    padding:16px; border-radius:14px; font-weight:800; font-size:22px;
+    display:inline-grid; place-items:center; min-width:72px; min-height:64px;
+    box-shadow: 0 6px 18px var(--shadow); user-select:none; transition:.15s transform ease;
   }
   .boxbtn:active{ transform: translateY(1px) }
   .box-good{ background:linear-gradient(180deg, var(--good), var(--good-d)) }
   .box-bad{ background:linear-gradient(180deg, var(--bad), var(--bad-d)) }
-  .box-warn{ background:linear-gradient(180deg, var(--warn), var(--warn-d)) }
+
   .btn{
     appearance:none; -webkit-appearance:none; cursor:pointer;
     border:1px solid var(--ring); background:transparent; color:var(--ink);
@@ -79,13 +80,21 @@
   .goalTrack{height:10px;border:1px solid var(--ring);border-radius:10px;overflow:hidden}
   .goalFill{height:100%;width:0%; background:linear-gradient(90deg,#1bd67b,#7ee787)}
 
-  /* Per-card accent via CSS var */
-  .habitCard{ --accent: #7ee787; }
-  .habitCard .accentTag{ border-color: color-mix(in hsl, var(--accent), #000 60%); background: color-mix(in hsl, var(--accent), #000 85%); color: #e8ffee }
+  /* Per-card accent via inline border color */
   .emoji{ font-size:20px; filter: drop-shadow(0 2px 6px rgba(255,255,255,.08)) }
 
   /* Confetti canvas */
   #fx{ position:fixed; left:0; top:0; width:100vw; height:100vh; pointer-events:none; z-index:999 }
+
+  /* Streak mini-chart */
+  .streak{ display:flex; gap:4px; flex-wrap:wrap; margin-top:8px }
+  .dot{
+    width:14px; height:14px; border-radius:4px; border:1px solid #2a3142; background:#0f1320;
+  }
+  .dot.plus{ background:#1b8f63 }   /* green for completed day */
+  .dot.minus{ background:#7f1820 }  /* red for miss-only day */
+  .dot.today{ outline:2px solid #e9ecf1; outline-offset:1px } /* highlight today */
+  .legend{ color:var(--muted); font-size:11px }
 
   .empty{ color:var(--muted); text-align:center; padding:18px 8px; border:1px dashed #2a3142; border-radius:14px }
   .spacer{height: env(safe-area-inset-bottom)}
@@ -127,7 +136,7 @@
   <div class="card">
     <h3>Add Habit</h3>
     <div class="row" style="gap:8px; margin-bottom:8px">
-      <input id="newHabitName" class="input" placeholder="Habit name (e.g., Workout, Meditate)" />
+      <input id="newHabitName" class="input" placeholder="Habit name (e.g., Workout, Mindfulness)" />
       <input id="newHabitEmoji" class="input" placeholder="Emoji (e.g., 💪 or 🧘)" style="max-width:110px" />
       <input id="newHabitColor" type="color" class="input" value="#7ee787" style="max-width:110px; padding:6px 8px; height:44px" />
       <input id="newHabitStart" type="number" class="number" inputmode="decimal" min="0" step="1" placeholder="Start $" style="max-width:130px" />
@@ -135,9 +144,8 @@
     <div class="row">
       <button class="btn" id="addHabitBtn">Add Habit</button>
     </div>
-    <div class="hint" style="margin-top:8px">
-      Tap ✅ to earn and lower incentive by your step. Tap ✖️ to raise incentive by your step.
-      You can log multiple moments per day.
+    <div class="sub" style="margin-top:8px">
+      Tap ✅ to earn and lower incentive; tap ✖️ to raise incentive. Log multiple moments per day.
     </div>
   </div>
 
@@ -177,8 +185,6 @@
   </form>
 </dialog>
 
-<canvas id="fx2" style="display:none"></canvas>
-
 <script>
 (function(){
   // ---------- Helpers ----------
@@ -204,7 +210,7 @@
       o1.frequency.setValueAtTime(880, audioCtx.currentTime);
       o2.frequency.setValueAtTime(1320, audioCtx.currentTime);
       g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.4, audioCtx.currentTime+0.01);
+      g.gain.exponentialRampToValueAtTime(0.35, audioCtx.currentTime+0.01);
       g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+0.20);
       o1.connect(g); o2.connect(g); g.connect(audioCtx.destination);
       o1.start(); o2.start();
@@ -213,12 +219,13 @@
   }
 
   // Confetti
-  const fxCanvas = $('#fx'), fxCtx = fxCanvas.getContext('2d');
+  const fxCanvas = (()=>{ const c=document.createElement('canvas'); c.id='fx'; document.body.prepend(c); return c; })();
+  const fxCtx = fxCanvas.getContext('2d');
   function sizeFx(){ fxCanvas.width=innerWidth*devicePixelRatio; fxCanvas.height=innerHeight*devicePixelRatio; }
   addEventListener('resize', sizeFx); sizeFx();
-  function fireConfetti(colorHueBase=120){
+  function fireConfetti(hue=120){
     const particles=[];
-    const N=100;
+    const N=90;
     for(let i=0;i<N;i++){
       particles.push({
         x: (Math.random()*innerWidth)*devicePixelRatio,
@@ -228,7 +235,7 @@
         g: 0.22*devicePixelRatio,
         r: Math.random()*3+2,
         a: 1.0,
-        hue: colorHueBase + (Math.random()*40-20)
+        hue: hue + (Math.random()*40-20)
       });
     }
     const start = performance.now();
@@ -246,18 +253,16 @@
   }
 
   // ---------- State ----------
-  const STORAGE_KEY='cashHabitRewards.v3';
+  const STORAGE_KEY='cashHabitRewards.v4';
   /**
-   * version: number
-   * cashTotal: number
-   * step: number
+   * version, cashTotal, step
    * habits: {
-   *  id, name, emoji, color, incentive, step, streak, lastDone,
+   *  id, name, emoji, color, incentive, step, streak,
    *  history: { [date]: { events: Array<{ts:number,type:'plus'|'minus',amount:number}> } },
    *  focusToday?: string
-   * }[]
-   * transactions: [{ts, type:'earn'|'spend', habitId?, habitName?, amount, date, kind?}]
-   * goal: {name, price, allocated} | null
+   * }
+   * transactions: [{tsISO, evTs?, type:'earn'|'spend', habitId?, habitName?, amount, date}]
+   * goal: {name, price, allocated}
    */
   let state = load();
 
@@ -266,57 +271,20 @@
     if(saved){
       try{
         const s=JSON.parse(saved);
-        s.habits = (s.habits||[]).map(h=>({
-          emoji:'', color:'#7ee787', step:(s.step||5), streak:0, history:{}, ...h
-        }));
+        s.habits = (s.habits||[]).map(h=>({ emoji:'', color:'#7ee787', step:(s.step||5), streak:h.streak||0, history:{}, ...h }));
         if(!('goal' in s)) s.goal = { name:"Treat yo' self", price:150, allocated:0 };
         return s;
       }catch(e){}
     }
-    // migration from older versions (v1/v2)
-    const old2 = localStorage.getItem('cashHabitRewards.v2');
-    if(old2){
-      try{
-        const o=JSON.parse(old2);
-        o.habits = (o.habits||[]).map(h=>{
-          const hist = {};
-          for(const k in (h.history||{})){
-            const entry=h.history[k];
-            const arr=[];
-            if(entry.status==='complete' && entry.reward){
-              arr.push({ts:Date.now(), type:'plus', amount:entry.reward});
-            }else if(entry.status==='miss'){
-              arr.push({ts:Date.now(), type:'minus', amount:o.step||5});
-            }else if(entry.status==='started' && entry.reward){
-              arr.push({ts:Date.now(), type:'plus', amount:entry.reward});
-            }
-            hist[k] = { events: arr };
-          }
-          return {
-            id:h.id||cid(), name:h.name, emoji:'', color:'#7ee787',
-            incentive:h.incentive??20, step:h.step||o.step||5, streak:h.streak||0, lastDone:h.lastDone,
-            history: hist, focusToday:h.focusToday||''
-          };
-        });
-        return {
-          version:3,
-          cashTotal:o.cashTotal||0,
-          step:o.step||5,
-          habits:o.habits,
-          transactions:o.transactions||[],
-          goal:o.goal || { name:"Treat yo' self", price:150, allocated:0 }
-        };
-      }catch(e){}
-    }
     // fresh
     return {
-      version:3,
+      version:4,
       cashTotal:0,
       step:5,
       habits:[
-        { id:cid(), name:'Workout', emoji:'💪', color:'#7ee787', incentive:20, step:5, streak:0, lastDone:'', history:{}, focusToday:'' },
-        { id:cid(), name:'Mindfulness', emoji:'🧘', color:'#8b9cf6', incentive:20, step:5, streak:0, lastDone:'', history:{}, focusToday:'' },
-        { id:cid(), name:'Sleep 7+ h', emoji:'😴', color:'#f7b955', incentive:20, step:5, streak:0, lastDone:'', history:{}, focusToday:'' },
+        { id:cid(), name:'Workout', emoji:'💪', color:'#7ee787', incentive:20, step:5, streak:0, history:{}, focusToday:'' },
+        { id:cid(), name:'Mindfulness', emoji:'🧘', color:'#8b9cf6', incentive:20, step:5, streak:0, history:{}, focusToday:'' },
+        { id:cid(), name:'Sleep 7+ h', emoji:'😴', color:'#f7b955', incentive:20, step:5, streak:0, history:{}, focusToday:'' },
       ],
       transactions:[],
       goal: { name:"Treat yo' self", price:150, allocated:0 }
@@ -324,38 +292,29 @@
   }
   function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
-  // ---------- Core ----------
-  function earn(habit, amount){
+  // ---------- Money & effects ----------
+  function earn(habit, amount, evTs){
     state.cashTotal = round2(state.cashTotal + amount);
     if(state.goal){
       state.goal.allocated = Math.min(state.goal.price, round2((state.goal.allocated||0) + amount));
     }
-    state.transactions.push({ ts:new Date().toISOString(), type:'earn', habitId:habit.id, habitName:habit.name, amount, date:todayKey() });
+    state.transactions.push({ tsISO:new Date().toISOString(), evTs, type:'earn', habitId:habit.id, habitName:habit.name, amount, date:todayKey() });
   }
 
+  // ---------- Log actions ----------
   function logPlus(habit){
     const k=todayKey();
     if(!habit.history[k]) habit.history[k]={events:[]};
 
     // pay current incentive, then reduce incentive by step
     const payout = Math.max(0, habit.incentive);
-    if(payout>0){ earn(habit, payout); }
+    const evTs = Date.now();
+    if(payout>0){ earn(habit, payout, evTs); }
 
     habit.incentive = Math.max(0, round2(habit.incentive - habit.step));
-    habit.history[k].events.push({ ts:Date.now(), type:'plus', amount:payout });
+    habit.history[k].events.push({ ts:evTs, type:'plus', amount:payout });
 
-    // streak: if today had any plus, it's a "done" day
-    const y = new Date(); y.setDate(y.getDate()-1);
-    const yKey = todayKey(y);
-    const todayHasPlus = habit.history[k].events.some(e=>e.type==='plus' && e.amount>0);
-    if(todayHasPlus){
-      const yPlus = habit.history[yKey]?.events?.some(e=>e.type==='plus' && e.amount>0);
-      habit.streak = yPlus ? (habit.streak||0)+1 : 1;
-      habit.lastDone = k;
-    }
-
-    // micro-feedback
-    buzz(30); playKaching(); fireConfetti(colorHueFromHex(habit.color));
+    buzz(30); playKaching(); fireConfetti(hexToHue(habit.color));
     save(); render();
   }
 
@@ -370,16 +329,53 @@
     save(); render();
   }
 
-  function colorHueFromHex(hex){
+  // Undo last tap (search latest event across ALL days for this habit)
+  function undoLast(habit){
+    let latestDate=null, latestIdx=-1, latestEv=null;
+    for(const [date, rec] of Object.entries(habit.history)){
+      const idx = (rec.events||[]).length-1;
+      if(idx>=0){
+        const last = rec.events[idx];
+        if(!latestEv || last.ts > latestEv.ts){
+          latestEv = last; latestIdx = idx; latestDate = date;
+        }
+      }
+    }
+    if(!latestEv){ alert('Nothing to undo for this habit.'); return; }
+
+    if(latestEv.type==='plus'){
+      // reverse cash & goal, restore incentive by step
+      const tIndex = state.transactions.findIndex(t => t.type==='earn' && t.habitId===habit.id && t.evTs===latestEv.ts);
+      if(tIndex>=0){
+        const amt = state.transactions[tIndex].amount;
+        state.cashTotal = round2(state.cashTotal - amt);
+        if(state.goal){ state.goal.allocated = Math.max(0, round2((state.goal.allocated||0) - Math.min(amt, state.goal.allocated||0))); }
+        state.transactions.splice(tIndex,1);
+      }else{
+        // fallback: reduce by event amount (best effort)
+        state.cashTotal = round2(state.cashTotal - (latestEv.amount||0));
+        if(state.goal){ state.goal.allocated = Math.max(0, round2((state.goal.allocated||0) - Math.min(latestEv.amount||0, state.goal.allocated||0))); }
+      }
+      habit.incentive = round2(habit.incentive + habit.step);
+    } else if(latestEv.type==='minus'){
+      // reverse incentive increase
+      habit.incentive = Math.max(0, round2(habit.incentive - habit.step));
+    }
+
+    habit.history[latestDate].events.splice(latestIdx,1);
+    if(habit.history[latestDate].events.length===0){ delete habit.history[latestDate]; }
+
+    buzz(20);
+    save(); render();
+  }
+
+  // ---------- Utilities ----------
+  function hexToHue(hex){
     try{
       const c = hex.replace('#','');
       const r=parseInt(c.slice(0,2),16)/255, g=parseInt(c.slice(2,4),16)/255, b=parseInt(c.slice(4,6),16)/255;
-      const mx=Math.max(r,g,b), mn=Math.min(r,g,b), d=mx-mn;
-      let h=0;
-      if(d===0) h=0;
-      else if(mx===r) h=((g-b)/d)%6;
-      else if(mx===g) h=(b-r)/d+2;
-      else h=(r-g)/d+4;
+      const mx=Math.max(r,g,b), mn=Math.min(r,g,b), d=mx-mn; let h=0;
+      if(d===0) h=0; else if(mx===r) h=((g-b)/d)%6; else if(mx===g) h=(b-r)/d+2; else h=(r-g)/d+4;
       h=Math.round(60*h); if(h<0) h+=360; return h;
     }catch{ return 120; }
   }
@@ -390,7 +386,7 @@
     if(amt>state.cashTotal){ alert(`You only have ${fmt.format(state.cashTotal)} available.`); return; }
     state.cashTotal = round2(state.cashTotal - amt);
     if(state.goal){ state.goal.allocated = Math.max(0, round2(state.goal.allocated - Math.min(amt, state.goal.allocated||0))); }
-    state.transactions.push({ ts:new Date().toISOString(), type:'spend', amount:amt, date:todayKey(), note: String(note||'') });
+    state.transactions.push({ tsISO:new Date().toISOString(), type:'spend', amount:amt, date:todayKey(), note: String(note||'') });
     save(); render();
   }
 
@@ -399,13 +395,13 @@
     if(!nm){ alert('Please enter a habit name.'); return; }
     let st = Number(start); if(!isFinite(st) || st<0) st = 20;
     const col = /^#?[0-9a-f]{6}$/i.test(String(color||'')) ? (String(color).startsWith('#')?color:'#'+color) : '#7ee787';
-    state.habits.push({ id:cid(), name:nm, emoji:String(emoji||'').trim().slice(0,2), color:col, incentive:round2(st), step:state.step, streak:0, lastDone:'', history:{}, focusToday:'' });
+    state.habits.push({ id:cid(), name:nm, emoji:String(emoji||'').trim().slice(0,2), color:col, incentive:round2(st), step:state.step, streak:0, history:{}, focusToday:'' });
     save(); render();
-    $('#newHabitName').value=''; $('#newHabitStart').value=''; $('#newHabitEmoji').value=''; // color remains last used
+    $('#newHabitName').value=''; $('#newHabitStart').value=''; $('#newHabitEmoji').value=''; // keep last used color
   }
 
   function deleteHabit(id){
-    if(!confirm('Delete this habit? Past logs remain in transactions, but the habit will be removed.')) return;
+    if(!confirm('Delete this habit? Past transactions stay in history.')) return;
     state.habits = state.habits.filter(h=>h.id!==id);
     save(); render();
   }
@@ -421,6 +417,19 @@
     save(); render();
   }
 
+  // ---------- Streak calculation ----------
+  function recomputeStreak(habit){
+    // Count consecutive days up to today with any plus
+    let count=0;
+    for(let i=0;i<365;i++){
+      const d=new Date(); d.setDate(d.getDate()-i); const key=todayKey(d);
+      const ev=habit.history[key]?.events||[];
+      const hasPlus = ev.some(e=>e.type==='plus' && e.amount>0);
+      if(hasPlus) count++; else break;
+    }
+    habit.streak = count;
+  }
+
   // ---------- UI ----------
   function render(){
     $('#cashTotal').textContent = fmt.format(state.cashTotal);
@@ -433,13 +442,14 @@
     $('#goalBar').style.width = pct + '%';
 
     const k=todayKey();
-    const focused = state.habits.filter(h=>h.focusToday===k)
-      .sort((a,b)=>b.incentive-a.incentive);
-    const others = state.habits.filter(h=>h.focusToday!==k)
-      .sort((a,b)=>b.incentive-a.incentive);
+    // Recompute streaks
+    state.habits.forEach(recomputeStreak);
+
+    const focused = state.habits.filter(h=>h.focusToday===k).sort((a,b)=>b.incentive-a.incentive);
+    const others = state.habits.filter(h=>h.focusToday!==k).sort((a,b)=>b.incentive-a.incentive);
 
     const focusList = $('#focusList');
-    focusList.innerHTML = focused.length ? '' : `<div class="empty">Tap 🎨 to edit color/emoji. Tap ⭐ to pick up to 3 Focus Today.</div>`;
+    focusList.innerHTML = focused.length ? '' : `<div class="empty">Tap 🎨 to set emoji/color. Tap ⭐ to pick up to 3 Focus Today.</div>`;
     focused.forEach(h=> focusList.appendChild(habitCard(h)));
 
     const list = $('#habitList');
@@ -461,7 +471,7 @@
           <div style="font-weight:700">−${fmt.format(t.amount)}</div>
         </div>`;
       }
-    }).join('') : `<div class="hint">No entries yet today.</div>`;
+    }).join('') : `<div class="sub">No entries yet today.</div>`;
   }
 
   function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -473,8 +483,18 @@
     const minusCount = ev.filter(e=>e.type==='minus').length;
 
     const card = document.createElement('div');
-    card.className = 'card habitCard';
-    card.style.setProperty('--accent', habit.color||'#7ee787');
+    card.className = 'card';
+    card.style.borderColor = habit.color||'#7ee787';   /* custom border color */
+
+    // Build 14-day mini streak chart (oldest→newest)
+    const dots = [];
+    for(let i=13;i>=0;i--){
+      const d=new Date(); d.setDate(d.getDate()-i); const key=todayKey(d);
+      const dayEv = habit.history[key]?.events || [];
+      const hasPlus = dayEv.some(e=>e.type==='plus' && e.amount>0);
+      const hasMinusOnly = dayEv.length>0 && !hasPlus;
+      dots.push(`<span class="dot ${hasPlus?'plus':hasMinusOnly?'minus':''} ${i===0?'today':''}" title="${key}"></span>`);
+    }
 
     card.innerHTML = `
       <div class="row split" style="margin-bottom:8px">
@@ -483,18 +503,23 @@
           <div>
             <h3><span class="emoji">${escapeHTML(habit.emoji||'')}</span> ${escapeHTML(habit.name)}</h3>
             <div class="row" style="gap:8px">
-              <span class="tag accentTag" title="Next reward if you tap ✅">${fmt.format(habit.incentive)}</span>
-              <span class="tag" title="Adaptive step">±$${habit.step}</span>
+              <span class="tag" title="Next reward if you tap ✅">${fmt.format(habit.incentive)}</span>
+              <span class="tag" title="Step">±$${habit.step}</span>
               <span class="tag" title="Streak">🔥 ${habit.streak||0}</span>
               <button class="btn small" data-action="edit">🎨 Edit</button>
               <button class="btn small" data-action="delete">🗑️</button>
+              <button class="btn small" data-action="undo">↩️ Undo last tap</button>
+            </div>
+            <div class="streak" aria-label="streak chart">
+              ${dots.join('')}
+              <div class="legend">Last 14 days · green=done · red=miss-only · ◽=no log · outlined=today</div>
             </div>
           </div>
         </div>
         <div class="tag">Today: +${plusCount} / −${minusCount}</div>
       </div>
 
-      <div class="row" style="gap:10px; flex-wrap:wrap">
+      <div class="row center" style="gap:14px; flex-wrap:wrap; margin-top:6px">
         <button class="boxbtn box-good" data-action="plus" title="Complete">✅</button>
         <button class="boxbtn box-bad" data-action="minus" title="Didn’t">✖️</button>
       </div>
@@ -502,6 +527,7 @@
 
     card.querySelector('[data-action="plus"]').addEventListener('click', ()=>logPlus(habit));
     card.querySelector('[data-action="minus"]').addEventListener('click', ()=>logMinus(habit));
+    card.querySelector('[data-action="undo"]').addEventListener('click', ()=>undoLast(habit));
     card.querySelector('[data-action="delete"]').addEventListener('click', ()=>deleteHabit(habit.id));
     card.querySelector('[data-action="focus"]').addEventListener('click', ()=>toggleFocus(habit));
     card.querySelector('[data-action="edit"]').addEventListener('click', ()=>openEdit(habit));
@@ -536,9 +562,9 @@
   $('#addHabitBtn').addEventListener('click', ()=>{
     addHabit($('#newHabitName').value, $('#newHabitStart').value, $('#newHabitEmoji').value, $('#newHabitColor').value);
   });
-  $('#newHabitName').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('#addHabitBtn').click(); }});
-  $('#newHabitStart').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('#addHabitBtn').click(); }});
-  $('#newHabitEmoji').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('#addHabitBtn').click(); }});
+  ['#newHabitName','#newHabitStart','#newHabitEmoji'].forEach(sel=>{
+    $(sel).addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('#addHabitBtn').click(); }});
+  });
 
   const spendModal = $('#spendModal');
   $('#spendBtn').addEventListener('click', ()=>spendModal.showModal());
@@ -583,7 +609,6 @@
       const gPrice = Math.max(1, Math.floor(Number(settingsModal.querySelector('#goalPrice').value)|| (state.goal?.price || 150)));
       if(!state.goal) state.goal = { name:gName||"Treat yo' self", price:gPrice, allocated:0 };
       else { state.goal.name = gName||state.goal.name; state.goal.price = gPrice; state.goal.allocated = Math.min(state.goal.price, state.goal.allocated||0); }
-      // also update default step for new habits (existing habits keep their current step)
       save(); render();
     }
   });
