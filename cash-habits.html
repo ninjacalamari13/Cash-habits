@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>Cash Habit Rewards</title>
 
-<!-- iPhone app-like fullscreen -->
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Cash Habits" />
@@ -13,8 +12,10 @@
 <style>
   :root{
     --bg:#0f1115; --card:#171a21; --ink:#e9ecf1; --muted:#9aa3b2;
-    --accent:#7ee787; --accent-2:#8b9cf6; --danger:#ff6b6b; --warn:#f7b955;
     --ring:#2a2f3a; --shadow:#00000055;
+    --good:#1b8f63; --good-d:#117d57;
+    --bad:#b0232c; --bad-d:#7f1820;
+    --warn:#7c5a13; --warn-d:#66490f;
   }
   html,body{height:100%}
   body{
@@ -33,25 +34,6 @@
   .grow{flex:1}
   .balance{font-weight:800; font-size:26px; letter-spacing:.2px}
   .sub{color:var(--muted); font-size:12px}
-  .btn{
-    appearance:none; -webkit-appearance:none; cursor:pointer;
-    border:1px solid var(--ring); background:var(--card); color:var(--ink);
-    padding:10px 14px; border-radius:12px; font-weight:700; transition:.15s transform ease, .15s background ease, .15s border-color ease;
-    box-shadow: 0 6px 18px var(--shadow); user-select:none;
-  }
-  .btn:active{ transform: translateY(1px) }
-  .btn.accent{ background: linear-gradient(180deg, #1b8f63, #117d57); border-color:#0f6b4a }
-  .btn.warn{ background: linear-gradient(180deg, #7c5a13, #66490f); border-color:#5a3f0e }
-  .btn.ghost{ background:transparent; border-color:var(--ring) }
-  .btn.small{ padding:6px 8px; border-radius:10px; font-size:12px }
-  .btn.icon{ width:40px; height:40px; display:inline-grid; place-items:center; padding:0; font-size:18px }
-  .tag{
-    display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px;
-    background:#0f1320; border:1px solid #1a2030; color:#cfd6e6; font-size:12px; font-weight:700;
-  }
-  .pill{
-    padding:6px 10px; border-radius:999px; border:1px dashed #2b3344; color:var(--muted); font-size:12px; font-weight:700;
-  }
   .section-title{margin:18px 2px 6px; color:var(--muted); font-weight:700; font-size:13px; letter-spacing:.35px}
   .card{
     background:linear-gradient(180deg, var(--card), #141821);
@@ -60,20 +42,11 @@
   }
   .card h3{margin:0 0 4px; font-size:18px}
   .hint{color:var(--muted); font-size:12px}
-  .status{
-    padding:2px 8px; border-radius:999px; border:1px solid #2a3142; color:#aeb6c7; font-size:11px; font-weight:800;
+  .tag{
+    display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px;
+    background:#0f1320; border:1px solid #1a2030; color:#cfd6e6; font-size:12px; font-weight:700;
   }
-  .status.done{ color:#baf7c6; border-color:#285c41; background:#0c1b14 }
-  .status.miss{ color:#ffd7a1; border-color:#6b4d14; background:#1a1308 }
-  .status.start{ color:#e7f0ff; border-color:#3a4a71; background:#0b1426 }
-  .focusBadge{ padding:2px 8px; border-radius:999px; border:1px solid #2a3142; color:#e5e9f6; font-size:11px; font-weight:800; background:#12162a }
-  .spacer{height: env(safe-area-inset-bottom)}
-  dialog{ border:none; border-radius:16px; padding:0; background:transparent }
-  .modal{
-    background:linear-gradient(180deg, var(--card), #131822);
-    border:1px solid var(--ring); border-radius:16px; padding:16px;
-    min-width: min(92vw, 520px); box-shadow: 0 24px 50px var(--shadow);
-  }
+  .pill{ padding:6px 10px; border-radius:999px; border:1px dashed #2b3344; color:var(--muted); font-size:12px; font-weight:700 }
   .input, .number{
     width:100%; box-sizing:border-box; padding:12px 12px; color:var(--ink);
     background:#0e121b; border:1px solid var(--ring); border-radius:12px; outline:none;
@@ -81,22 +54,41 @@
   .number{appearance:textfield}
   .number::-webkit-outer-spin-button,.number::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
 
+  /* Box buttons */
+  .boxbtn{
+    appearance:none; -webkit-appearance:none; cursor:pointer;
+    border:2px solid transparent; color:#fff;
+    padding:14px; border-radius:14px; font-weight:800; font-size:18px;
+    display:inline-grid; place-items:center; min-width:64px; min-height:56px;
+    box-shadow: 0 6px 18px var(--shadow); user-select:none; transition:.15s transform ease, .15s background ease;
+  }
+  .boxbtn:active{ transform: translateY(1px) }
+  .box-good{ background:linear-gradient(180deg, var(--good), var(--good-d)) }
+  .box-bad{ background:linear-gradient(180deg, var(--bad), var(--bad-d)) }
+  .box-warn{ background:linear-gradient(180deg, var(--warn), var(--warn-d)) }
+  .btn{
+    appearance:none; -webkit-appearance:none; cursor:pointer;
+    border:1px solid var(--ring); background:transparent; color:var(--ink);
+    padding:10px 14px; border-radius:12px; font-weight:700; transition:.15s transform ease;
+  }
+  .btn:active{ transform: translateY(1px) }
+  .btn.small{ padding:6px 8px; border-radius:10px; font-size:12px }
+  .btn.icon{ width:40px; height:40px; display:inline-grid; place-items:center; padding:0; font-size:18px }
+
   /* Goal bar */
   .goalTrack{height:10px;border:1px solid var(--ring);border-radius:10px;overflow:hidden}
-  .goalFill{height:100%;width:0%}
-  .goalFill{ background:linear-gradient(90deg,#1bd67b,#7ee787) }
+  .goalFill{height:100%;width:0%; background:linear-gradient(90deg,#1bd67b,#7ee787)}
+
+  /* Per-card accent via CSS var */
+  .habitCard{ --accent: #7ee787; }
+  .habitCard .accentTag{ border-color: color-mix(in hsl, var(--accent), #000 60%); background: color-mix(in hsl, var(--accent), #000 85%); color: #e8ffee }
+  .emoji{ font-size:20px; filter: drop-shadow(0 2px 6px rgba(255,255,255,.08)) }
 
   /* Confetti canvas */
   #fx{ position:fixed; left:0; top:0; width:100vw; height:100vh; pointer-events:none; z-index:999 }
 
-  /* Countdown chip */
-  .chip{ display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px;
-         background:#0e1627; border:1px solid #27406f; color:#dbe7ff; font-size:12px; font-weight:700 }
   .empty{ color:var(--muted); text-align:center; padding:18px 8px; border:1px dashed #2a3142; border-radius:14px }
-
-  /* Star button */
-  .star{font-size:18px; filter: drop-shadow(0 2px 6px rgba(255,214,96,.35))}
-  .star.on{ color:#ffd660 }
+  .spacer{height: env(safe-area-inset-bottom)}
 </style>
 </head>
 <body>
@@ -110,8 +102,8 @@
         <div class="balance" id="cashTotal">$0.00</div>
       </div>
       <div class="row">
-        <button class="btn accent" id="spendBtn">Spend Cash</button>
-        <button class="btn ghost" id="settingsBtn" title="Settings">⚙️</button>
+        <button class="btn" id="spendBtn">🛍️ Spend</button>
+        <button class="btn" id="settingsBtn" title="Settings">⚙️</button>
       </div>
     </div>
 
@@ -136,14 +128,16 @@
     <h3>Add Habit</h3>
     <div class="row" style="gap:8px; margin-bottom:8px">
       <input id="newHabitName" class="input" placeholder="Habit name (e.g., Workout, Meditate)" />
+      <input id="newHabitEmoji" class="input" placeholder="Emoji (e.g., 💪 or 🧘)" style="max-width:110px" />
+      <input id="newHabitColor" type="color" class="input" value="#7ee787" style="max-width:110px; padding:6px 8px; height:44px" />
       <input id="newHabitStart" type="number" class="number" inputmode="decimal" min="0" step="1" placeholder="Start $" style="max-width:130px" />
     </div>
-    <div class="actions">
+    <div class="row">
       <button class="btn" id="addHabitBtn">Add Habit</button>
     </div>
     <div class="hint" style="margin-top:8px">
-      Starting reward optional (default $20). “Complete” earns current reward then lowers it by your step.
-      “Didn’t” raises it by your step. “1-min Start” gives a partial win (30%).
+      Tap ✅ to earn and lower incentive by your step. Tap ✖️ to raise incentive by your step.
+      You can log multiple moments per day.
     </div>
   </div>
 
@@ -155,58 +149,35 @@
 
 <!-- Spend Modal -->
 <dialog id="spendModal">
-  <form method="dialog" class="modal">
-    <h4>Spend Cash</h4>
+  <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
+    <h3>Spend Cash</h3>
     <div class="row"><input id="spendAmt" class="number" type="number" inputmode="decimal" min="0" step="1" placeholder="Amount $" /></div>
     <div class="row"><input id="spendNote" class="input" placeholder="What did you buy? (optional)" /></div>
-    <div class="row actions" style="justify-content:flex-end">
-      <button class="btn ghost" value="cancel">Cancel</button>
-      <button class="btn warn" value="submit">Spend</button>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn" value="cancel">Cancel</button>
+      <button class="btn" value="submit">Spend</button>
     </div>
   </form>
 </dialog>
 
-<!-- Settings Modal -->
-<dialog id="settingsModal">
-  <form method="dialog" class="modal">
-    <h4>Settings</h4>
-    <div class="row" style="gap:10px">
-      <label class="pill">Global step (±):</label>
-      <input id="stepInput" class="number" type="number" inputmode="decimal" min="1" step="1" placeholder="$ step" style="max-width:130px" />
-    </div>
-    <div class="section-title">Goal</div>
+<!-- Edit Habit Modal -->
+<dialog id="editModal">
+  <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
+    <h3>Edit Habit</h3>
     <div class="row" style="gap:8px">
-      <input id="goalTitle" class="input" placeholder="Goal name (e.g., Massage / Shoes / Trip)" />
-      <input id="goalPrice" class="number" type="number" inputmode="decimal" min="1" step="1" placeholder="Price $" style="max-width:140px" />
+      <input id="editName" class="input" placeholder="Name" />
+      <input id="editEmoji" class="input" placeholder="Emoji" style="max-width:110px" />
+      <input id="editColor" type="color" class="input" value="#7ee787" style="max-width:110px; padding:6px 8px; height:44px" />
+      <input id="editStart" type="number" class="number" min="0" step="1" placeholder="Current reward $" style="max-width:160px" />
     </div>
-    <div class="hint" style="margin-top:8px">Earnings automatically allocate toward this goal.</div>
-    <div class="row actions" style="justify-content:flex-end; margin-top:10px">
-      <button class="btn ghost" value="cancel">Close</button>
+    <div class="row" style="justify-content:flex-end; margin-top:10px">
+      <button class="btn" value="cancel">Cancel</button>
       <button class="btn" value="submit">Save</button>
     </div>
   </form>
 </dialog>
 
-<!-- Miss Reason Modal -->
-<dialog id="missModal">
-  <form method="dialog" class="modal">
-    <h4>Why did it slip?</h4>
-    <div class="row" id="reasonButtons" style="gap:8px; flex-wrap:wrap">
-      <!-- buttons injected -->
-    </div>
-    <div class="row" style="margin-top:10px"><input id="reasonFree" class="input" placeholder="Custom note (optional)" /></div>
-    <div id="planBox" style="margin-top:12px; display:none">
-      <div class="hint">If-then plan:</div>
-      <div class="card" style="margin:8px 0; padding:10px">
-        <div id="planText" style="font-weight:700"></div>
-      </div>
-    </div>
-    <div class="row actions" style="justify-content:flex-end">
-      <button class="btn ghost" value="cancel">Cancel</button>
-      <button class="btn warn" value="submit">Save</button>
-    </div>
-  </form>
-</dialog>
+<canvas id="fx2" style="display:none"></canvas>
 
 <script>
 (function(){
@@ -218,20 +189,12 @@
     const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
     return `${y}-${m}-${dd}`;
   }
-  function weekOf(d=new Date()){
-    // Monday-based week key YYYY-WW
-    const t=new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    const day=(t.getUTCDay()+6)%7; // 0=Mon
-    t.setUTCDate(t.getUTCDate()-day);
-    return `W${t.getUTCFullYear()}-${String(t.getUTCMonth()+1).padStart(2,'0')}-${String(t.getUTCDate()).padStart(2,'0')}`;
-  }
   function niceDate(d){ return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}); }
   function cid(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
   function round2(n){ return Math.round((Number(n)||0)*100)/100; }
-  function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function buzz(ms=30){ try{ navigator.vibrate?.(ms); }catch{} }
 
-  // WebAudio "ka-ching" (tiny two-tone blip)
+  // WebAudio blip
   let audioCtx=null;
   function playKaching(){
     try{
@@ -253,9 +216,9 @@
   const fxCanvas = $('#fx'), fxCtx = fxCanvas.getContext('2d');
   function sizeFx(){ fxCanvas.width=innerWidth*devicePixelRatio; fxCanvas.height=innerHeight*devicePixelRatio; }
   addEventListener('resize', sizeFx); sizeFx();
-  function fireConfetti(){
+  function fireConfetti(colorHueBase=120){
     const particles=[];
-    const N=120;
+    const N=100;
     for(let i=0;i<N;i++){
       particles.push({
         x: (Math.random()*innerWidth)*devicePixelRatio,
@@ -265,7 +228,7 @@
         g: 0.22*devicePixelRatio,
         r: Math.random()*3+2,
         a: 1.0,
-        hue: Math.random()*80+90
+        hue: colorHueBase + (Math.random()*40-20)
       });
     }
     const start = performance.now();
@@ -276,252 +239,174 @@
         fxCtx.beginPath(); fxCtx.fillStyle = `hsla(${p.hue},90%,70%,${p.a})`;
         fxCtx.arc(p.x,p.y,p.r,0,Math.PI*2); fxCtx.fill();
       }
-      if(t-start < 1100){ requestAnimationFrame(tick); }
+      if(t-start < 1000){ requestAnimationFrame(tick); }
       else fxCtx.clearRect(0,0,fxCanvas.width,fxCanvas.height);
     }
     requestAnimationFrame(tick);
   }
 
-  // ---------- State & Load/Migrate ----------
-  const STORAGE_KEY='cashHabitRewards.v2';
-  /** @type {{
-    version:number,
-    cashTotal:number,
-    step:number,                 // global default step
-    habits:Array<{
-      id:string, name:string, incentive:number,
-      history:Record<string,{status:'complete'|'miss'|'started', reward?:number, bonus?:number, reason?:string}>,
-      streak:number, lastDone?:string,
-      step:number,               // per-habit adaptive step
-      skipTokens:number, skipWeek?:string,
-      plan?:string,              // if-then
-      focusToday?:string,        // date this is focused
-      timerEnd?:number           // ms timestamp for 1-min start countdown
-    }>,
-    transactions:Array<{ts:string,type:'earn'|'spend',habitId?:string,habitName?:string,amount:number,date:string,note?:string,kind?:'bonus'|'partial'|'base'}>,
-    goal:{name:string, price:number, allocated:number}|null,
-    lastTuneWeek?:string
-  }} */
+  // ---------- State ----------
+  const STORAGE_KEY='cashHabitRewards.v3';
+  /**
+   * version: number
+   * cashTotal: number
+   * step: number
+   * habits: {
+   *  id, name, emoji, color, incentive, step, streak, lastDone,
+   *  history: { [date]: { events: Array<{ts:number,type:'plus'|'minus',amount:number}> } },
+   *  focusToday?: string
+   * }[]
+   * transactions: [{ts, type:'earn'|'spend', habitId?, habitName?, amount, date, kind?}]
+   * goal: {name, price, allocated} | null
+   */
   let state = load();
 
   function load(){
     const saved = localStorage.getItem(STORAGE_KEY);
     if(saved){
-      try { 
-        const s = JSON.parse(saved);
-        // ensure fields
-        s.version = 2;
+      try{
+        const s=JSON.parse(saved);
         s.habits = (s.habits||[]).map(h=>({
-          streak:0, step:(s.step||5), skipTokens:1, ...h,
-          history: h.history||{}
+          emoji:'', color:'#7ee787', step:(s.step||5), streak:0, history:{}, ...h
         }));
         if(!('goal' in s)) s.goal = { name:"Treat yo' self", price:150, allocated:0 };
         return s;
-      } catch(e){}
+      }catch(e){}
     }
-    // migrate from v1 if present
-    const old = localStorage.getItem('cashHabitRewards.v1');
-    if(old){
+    // migration from older versions (v1/v2)
+    const old2 = localStorage.getItem('cashHabitRewards.v2');
+    if(old2){
       try{
-        const v1 = JSON.parse(old);
+        const o=JSON.parse(old2);
+        o.habits = (o.habits||[]).map(h=>{
+          const hist = {};
+          for(const k in (h.history||{})){
+            const entry=h.history[k];
+            const arr=[];
+            if(entry.status==='complete' && entry.reward){
+              arr.push({ts:Date.now(), type:'plus', amount:entry.reward});
+            }else if(entry.status==='miss'){
+              arr.push({ts:Date.now(), type:'minus', amount:o.step||5});
+            }else if(entry.status==='started' && entry.reward){
+              arr.push({ts:Date.now(), type:'plus', amount:entry.reward});
+            }
+            hist[k] = { events: arr };
+          }
+          return {
+            id:h.id||cid(), name:h.name, emoji:'', color:'#7ee787',
+            incentive:h.incentive??20, step:h.step||o.step||5, streak:h.streak||0, lastDone:h.lastDone,
+            history: hist, focusToday:h.focusToday||''
+          };
+        });
         return {
-          version:2,
-          cashTotal: v1.cashTotal||0,
-          step: v1.step||5,
-          habits: (v1.habits||[]).map(h=>({
-            id:h.id||cid(), name:h.name, incentive:h.incentive??20,
-            history:h.history||{}, streak:0, lastDone:undefined,
-            step: v1.step||5, skipTokens:1, skipWeek:weekOf(new Date()), plan:'', focusToday:''
-          })),
-          transactions: v1.transactions||[],
-          goal: { name:"Treat yo' self", price:150, allocated:0 },
-          lastTuneWeek: weekOf(new Date())
+          version:3,
+          cashTotal:o.cashTotal||0,
+          step:o.step||5,
+          habits:o.habits,
+          transactions:o.transactions||[],
+          goal:o.goal || { name:"Treat yo' self", price:150, allocated:0 }
         };
       }catch(e){}
     }
     // fresh
     return {
-      version:2,
+      version:3,
       cashTotal:0,
       step:5,
       habits:[
-        { id:cid(), name:'Workout', incentive:20, history:{}, streak:0, step:5, skipTokens:1, skipWeek:weekOf(new Date()) },
-        { id:cid(), name:'Meditate', incentive:20, history:{}, streak:0, step:5, skipTokens:1, skipWeek:weekOf(new Date()) },
-        { id:cid(), name:'Sleep 7+ h', incentive:20, history:{}, streak:0, step:5, skipTokens:1, skipWeek:weekOf(new Date()) },
+        { id:cid(), name:'Workout', emoji:'💪', color:'#7ee787', incentive:20, step:5, streak:0, lastDone:'', history:{}, focusToday:'' },
+        { id:cid(), name:'Mindfulness', emoji:'🧘', color:'#8b9cf6', incentive:20, step:5, streak:0, lastDone:'', history:{}, focusToday:'' },
+        { id:cid(), name:'Sleep 7+ h', emoji:'😴', color:'#f7b955', incentive:20, step:5, streak:0, lastDone:'', history:{}, focusToday:'' },
       ],
       transactions:[],
-      goal: { name:"Treat yo' self", price:150, allocated:0 },
-      lastTuneWeek: weekOf(new Date())
+      goal: { name:"Treat yo' self", price:150, allocated:0 }
     };
   }
   function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
-  // ---------- Core Logic ----------
-  function earn(habit, amount, kind='base'){
+  // ---------- Core ----------
+  function earn(habit, amount){
     state.cashTotal = round2(state.cashTotal + amount);
     if(state.goal){
       state.goal.allocated = Math.min(state.goal.price, round2((state.goal.allocated||0) + amount));
     }
-    state.transactions.push({ ts:new Date().toISOString(), type:'earn', habitId:habit.id, habitName:habit.name, amount, date:todayKey(), kind });
+    state.transactions.push({ ts:new Date().toISOString(), type:'earn', habitId:habit.id, habitName:habit.name, amount, date:todayKey() });
   }
 
-  function logComplete(habit){
+  function logPlus(habit){
     const k=todayKey();
-    const st=habit.history[k]?.status;
-    if(st==='complete'){ // undo complete
-      undoComplete(habit);
-      save(); render(); return;
-    }
-    // If switching from miss or started, normalize
-    if(st==='miss'){ undoMiss(habit); }
-    // Base reward (if started earlier today, they may have a partial already)
-    const partial = habit.history[k]?.status==='started' ? (habit.history[k].reward||0) : 0;
-    const baseToPay = Math.max(0, habit.incentive - partial);
-    if(baseToPay>0){ earn(habit, baseToPay, partial>0?'base-rest':'base'); }
-    // Surprise bonus 12% chance of +$1–$3
-    let bonus=0;
-    if(Math.random()<0.12){
-      bonus = [1,2,3][Math.floor(Math.random()*3)];
-      earn(habit, bonus, 'bonus');
-    }
-    // Update streak
+    if(!habit.history[k]) habit.history[k]={events:[]};
+
+    // pay current incentive, then reduce incentive by step
+    const payout = Math.max(0, habit.incentive);
+    if(payout>0){ earn(habit, payout); }
+
+    habit.incentive = Math.max(0, round2(habit.incentive - habit.step));
+    habit.history[k].events.push({ ts:Date.now(), type:'plus', amount:payout });
+
+    // streak: if today had any plus, it's a "done" day
     const y = new Date(); y.setDate(y.getDate()-1);
     const yKey = todayKey(y);
-    habit.streak = (habit.history[yKey]?.status==='complete') ? (habit.streak||0)+1 : 1;
-    habit.lastDone = k;
+    const todayHasPlus = habit.history[k].events.some(e=>e.type==='plus' && e.amount>0);
+    if(todayHasPlus){
+      const yPlus = habit.history[yKey]?.events?.some(e=>e.type==='plus' && e.amount>0);
+      habit.streak = yPlus ? (habit.streak||0)+1 : 1;
+      habit.lastDone = k;
+    }
 
-    // Reduce incentive by step, min 0
-    habit.incentive = Math.max(0, round2(habit.incentive - habit.step));
-    habit.history[k] = { status:'complete', reward: (partial + baseToPay), bonus };
-    habit.timerEnd = undefined;
-
-    buzz(30); playKaching(); fireConfetti();
+    // micro-feedback
+    buzz(30); playKaching(); fireConfetti(colorHueFromHex(habit.color));
     save(); render();
   }
 
-  function logMissFlow(habit){
+  function logMinus(habit){
     const k=todayKey();
-    const st=habit.history[k]?.status;
-    if(st==='miss'){ // undo miss
-      undoMiss(habit);
-      save(); render(); return;
-    }
-    if(st==='complete'){ undoComplete(habit); }
-    if(st==='started'){ // undo partial earnings from started
-      undoStarted(habit);
-    }
-    // open reason modal
-    openMissModal(habit);
-  }
+    if(!habit.history[k]) habit.history[k]={events:[]};
 
-  function applyMiss(habit, reason, plan){
-    const k=todayKey();
-    // Raise incentive by step
     habit.incentive = round2(habit.incentive + habit.step);
-    habit.history[k] = { status:'miss', reason };
-    if(plan) habit.plan = plan;
-    habit.timerEnd = undefined;
+    habit.history[k].events.push({ ts:Date.now(), type:'minus', amount:habit.step });
+
     buzz(15);
     save(); render();
   }
 
-  function startOneMinute(habit){
-    const k=todayKey();
-    const st=habit.history[k]?.status;
-    if(st){ return; } // already logged
-    // Start 60s countdown; on finish grant 30% partial
-    const partial = Math.max(1, Math.round(habit.incentive * 0.30));
-    habit.timerEnd = Date.now()+60000;
-    save(); render();
-
-    const check = ()=>{
-      if(!habit.timerEnd) return; // canceled/cleared
-      const remain = habit.timerEnd - Date.now();
-      if(remain<=0){
-        habit.timerEnd = undefined;
-        // credit partial if still not logged as complete/miss
-        const cur = habit.history[todayKey()];
-        if(!cur){
-          earn(habit, partial, 'partial');
-          habit.history[todayKey()] = { status:'started', reward: partial };
-          buzz(20);
-          save(); render();
-        }
-      }else{
-        setTimeout(check, Math.min(500, remain));
-      }
-    };
-    setTimeout(check, 500);
-  }
-
-  function cancelTimer(habit){
-    habit.timerEnd = undefined; save(); render();
-  }
-
-  function undoComplete(habit){
-    const k=todayKey();
-    const entry = habit.history[k]; if(!entry || entry.status!=='complete') return;
-    // restore incentive (add back step)
-    habit.incentive = round2(habit.incentive + habit.step);
-    // remove today's earn transactions for this habit
-    let removed=0;
-    for(let i=state.transactions.length-1;i>=0;i--){
-      const t=state.transactions[i];
-      if(t.type==='earn' && t.habitId===habit.id && t.date===k){
-        removed += t.amount;
-        state.transactions.splice(i,1);
-      }
-    }
-    state.cashTotal = round2(state.cashTotal - removed);
-    if(state.goal){ state.goal.allocated = Math.max(0, round2(state.goal.allocated - removed)); }
-    delete habit.history[k];
-  }
-
-  function undoMiss(habit){
-    const k=todayKey();
-    const entry = habit.history[k]; if(!entry || entry.status!=='miss') return;
-    habit.incentive = Math.max(0, round2(habit.incentive - habit.step));
-    delete habit.history[k];
-  }
-
-  function undoStarted(habit){
-    const k=todayKey();
-    const entry = habit.history[k]; if(!entry || entry.status!=='started') return;
-    // remove partial earn
-    for(let i=state.transactions.length-1;i>=0;i--){
-      const t=state.transactions[i];
-      if(t.type==='earn' && t.habitId===habit.id && t.date===k && t.kind==='partial'){
-        state.cashTotal = round2(state.cashTotal - t.amount);
-        if(state.goal){ state.goal.allocated = Math.max(0, round2(state.goal.allocated - t.amount)); }
-        state.transactions.splice(i,1); break;
-      }
-    }
-    delete habit.history[k];
-  }
-
-  function deleteHabit(id){
-    if(!confirm('Delete this habit? Progress and today’s log will be removed (cash you already earned stays).')) return;
-    state.habits = state.habits.filter(h=>h.id!==id);
-    save(); render();
-  }
-
-  function addHabit(name, start){
-    const nm = String(name||'').trim();
-    if(!nm){ alert('Please enter a habit name.'); return; }
-    let st = Number(start); if(!isFinite(st) || st<0) st = 20;
-    state.habits.push({ id:cid(), name:nm, incentive:round2(st), history:{}, streak:0, step:state.step, skipTokens:1, skipWeek:weekOf(new Date()) });
-    save(); render();
-    $('#newHabitName').value=''; $('#newHabitStart').value='';
+  function colorHueFromHex(hex){
+    try{
+      const c = hex.replace('#','');
+      const r=parseInt(c.slice(0,2),16)/255, g=parseInt(c.slice(2,4),16)/255, b=parseInt(c.slice(4,6),16)/255;
+      const mx=Math.max(r,g,b), mn=Math.min(r,g,b), d=mx-mn;
+      let h=0;
+      if(d===0) h=0;
+      else if(mx===r) h=((g-b)/d)%6;
+      else if(mx===g) h=(b-r)/d+2;
+      else h=(r-g)/d+4;
+      h=Math.round(60*h); if(h<0) h+=360; return h;
+    }catch{ return 120; }
   }
 
   function spend(amount, note){
     const amt = Number(amount)||0;
     if(amt<=0) return;
-    if(amt>state.cashTotal){
-      alert(`You only have ${fmt.format(state.cashTotal)} available.`); return;
-    }
+    if(amt>state.cashTotal){ alert(`You only have ${fmt.format(state.cashTotal)} available.`); return; }
     state.cashTotal = round2(state.cashTotal - amt);
+    if(state.goal){ state.goal.allocated = Math.max(0, round2(state.goal.allocated - Math.min(amt, state.goal.allocated||0))); }
     state.transactions.push({ ts:new Date().toISOString(), type:'spend', amount:amt, date:todayKey(), note: String(note||'') });
+    save(); render();
+  }
+
+  function addHabit(name, start, emoji, color){
+    const nm = String(name||'').trim();
+    if(!nm){ alert('Please enter a habit name.'); return; }
+    let st = Number(start); if(!isFinite(st) || st<0) st = 20;
+    const col = /^#?[0-9a-f]{6}$/i.test(String(color||'')) ? (String(color).startsWith('#')?color:'#'+color) : '#7ee787';
+    state.habits.push({ id:cid(), name:nm, emoji:String(emoji||'').trim().slice(0,2), color:col, incentive:round2(st), step:state.step, streak:0, lastDone:'', history:{}, focusToday:'' });
+    save(); render();
+    $('#newHabitName').value=''; $('#newHabitStart').value=''; $('#newHabitEmoji').value=''; // color remains last used
+  }
+
+  function deleteHabit(id){
+    if(!confirm('Delete this habit? Past logs remain in transactions, but the habit will be removed.')) return;
+    state.habits = state.habits.filter(h=>h.id!==id);
     save(); render();
   }
 
@@ -529,55 +414,15 @@
     const k=todayKey();
     if(habit.focusToday===k){ habit.focusToday=''; }
     else{
-      // cap Focus Today to 3
       const focused = state.habits.filter(h=>h.focusToday===k);
-      if(focused.length>=3){
-        alert('Limit is 3 Focus Today habits. Unfocus another to add this.');
-        return;
-      }
+      if(focused.length>=3){ alert('Limit is 3 Focus Today habits.'); return; }
       habit.focusToday=k;
     }
     save(); render();
   }
 
-  function useSkip(habit){
-    const wk = weekOf(new Date());
-    if(habit.skipWeek!==wk){ habit.skipWeek=wk; habit.skipTokens=1; }
-    if(habit.skipTokens<=0){ alert('No skip left this week.'); return; }
-    const k=todayKey();
-    if(habit.history[k]?.status==='complete'){ alert('Already completed today.'); return; }
-    habit.skipTokens -= 1;
-    habit.history[k] = { status:'miss', reason:'Skip (protected streak)' };
-    // Do NOT change incentive or streak on skip
-    save(); render();
-  }
-
-  // Adaptive weekly tuning: adjust per-habit step based on last 7 days
-  function weeklyTune(){
-    const wk = weekOf(new Date());
-    if(state.lastTuneWeek===wk) return;
-    // reset skip tokens each week
-    state.habits.forEach(h=>{
-      h.skipTokens = 1; h.skipWeek = wk;
-      // compute last 7 days completions
-      let done=0;
-      for(let i=1;i<=7;i++){
-        const d = new Date(); d.setDate(d.getDate()-i);
-        if(h.history[todayKey(d)]?.status==='complete') done++;
-      }
-      if(done<=2) h.step = Math.min(10, Math.max(2, h.step+2));
-      else if(done>=5) h.step = Math.max(2, h.step-1);
-      // clamp
-      h.step = Math.max(2, Math.min(10, Math.round(h.step)));
-      // cap incentive range
-      h.incentive = Math.max(0, Math.min(100, h.incentive));
-    });
-    state.lastTuneWeek = wk;
-  }
-
   // ---------- UI ----------
   function render(){
-    weeklyTune();
     $('#cashTotal').textContent = fmt.format(state.cashTotal);
     $('#todayText').textContent = niceDate(new Date());
     $('#stepDisplay').textContent = `$${state.step}`;
@@ -587,7 +432,6 @@
     const pct = Math.min(100, ((state.goal?.allocated||0)/(state.goal?.price||1))*100);
     $('#goalBar').style.width = pct + '%';
 
-    // sort habits: Focus today first by descending incentive, then others
     const k=todayKey();
     const focused = state.habits.filter(h=>h.focusToday===k)
       .sort((a,b)=>b.incentive-a.incentive);
@@ -595,7 +439,7 @@
       .sort((a,b)=>b.incentive-a.incentive);
 
     const focusList = $('#focusList');
-    focusList.innerHTML = focused.length ? '' : `<div class="empty">Pick up to 3 habits to Focus Today (tap ⭐).</div>`;
+    focusList.innerHTML = focused.length ? '' : `<div class="empty">Tap 🎨 to edit color/emoji. Tap ⭐ to pick up to 3 Focus Today.</div>`;
     focused.forEach(h=> focusList.appendChild(habitCard(h)));
 
     const list = $('#habitList');
@@ -603,13 +447,12 @@
     others.forEach(h=> list.appendChild(habitCard(h)));
 
     // today history
-    const todays = state.transactions.filter(t=>t.date===k).slice(-12);
+    const todays = state.transactions.filter(t=>t.date===k).slice(-18);
     const todayDiv = $('#todayHistory');
     todayDiv.innerHTML = todays.length? todays.map(t=>{
       if(t.type==='earn'){
-        const tag = t.kind==='bonus'?'🎁 Bonus':'✅';
         return `<div class="row split" style="margin:6px 0">
-          <div>${tag} ${escapeHTML(t.habitName||'Habit')}</div>
+          <div>✅ ${escapeHTML(t.habitName||'Habit')}</div>
           <div style="font-weight:700">${fmt.format(t.amount)}</div>
         </div>`;
       } else {
@@ -621,126 +464,81 @@
     }).join('') : `<div class="hint">No entries yet today.</div>`;
   }
 
+  function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
   function habitCard(habit){
     const k=todayKey();
-    const st = habit.history[k]?.status;
-    const card = document.createElement('div');
-    card.className = 'card';
-    const statusClass = st==='complete'?'done': st==='miss'?'miss': st==='started'?'start':'';
-    const statusLabel = st ? (st==='complete'?'Completed':st==='miss'?'Missed':'Started') : 'Not logged';
+    const ev = habit.history[k]?.events || [];
+    const plusCount = ev.filter(e=>e.type==='plus').length;
+    const minusCount = ev.filter(e=>e.type==='minus').length;
 
-    const timerRemain = habit.timerEnd? Math.max(0, habit.timerEnd - Date.now()) : 0;
-    const timerText = timerRemain>0 ? Math.ceil(timerRemain/1000)+'s' : '';
+    const card = document.createElement('div');
+    card.className = 'card habitCard';
+    card.style.setProperty('--accent', habit.color||'#7ee787');
 
     card.innerHTML = `
-      <div class="row split" style="margin-bottom:6px">
+      <div class="row split" style="margin-bottom:8px">
         <div class="row" style="gap:10px">
-          <button class="btn icon star ${habit.focusToday===k?'on':''}" title="Focus Today" data-action="focus">⭐</button>
+          <button class="btn icon" title="Focus Today" data-action="focus">⭐</button>
           <div>
-            <h3>${escapeHTML(habit.name)}</h3>
+            <h3><span class="emoji">${escapeHTML(habit.emoji||'')}</span> ${escapeHTML(habit.name)}</h3>
             <div class="row" style="gap:8px">
-              <span class="tag" title="Next reward if you complete">${fmt.format(habit.incentive)}</span>
+              <span class="tag accentTag" title="Next reward if you tap ✅">${fmt.format(habit.incentive)}</span>
               <span class="tag" title="Adaptive step">±$${habit.step}</span>
               <span class="tag" title="Streak">🔥 ${habit.streak||0}</span>
-              ${habit.plan? `<span class="focusBadge" title="If-then plan">${escapeHTML(habit.plan)}</span>`:''}
+              <button class="btn small" data-action="edit">🎨 Edit</button>
+              <button class="btn small" data-action="delete">🗑️</button>
             </div>
           </div>
         </div>
-        <span class="status ${statusClass}">${statusLabel}</span>
+        <div class="tag">Today: +${plusCount} / −${minusCount}</div>
       </div>
 
-      ${timerText? `<div class="row" style="margin:6px 0"><span class="chip">⏱ ${timerText} to partial +${fmt.format(Math.max(1, Math.round(habit.incentive*0.3)))}</span><button class="btn small ghost" data-action="cancelTimer">Cancel</button></div>`:''}
-
-      <div class="actions" style="margin-top:6px; gap:8px; flex-wrap:wrap">
-        <button class="btn accent" data-action="complete" ${st==='complete'?'disabled':''}>✔︎ Complete</button>
-        <button class="btn" data-action="miss" ${st==='miss'?'disabled':''}>✖︎ Didn’t</button>
-        <button class="btn warn" data-action="start1" ${st?'disabled':''}>⏱ 1-min Start</button>
-        <button class="btn ghost" data-action="skip">Skip (keep streak)</button>
-        <button class="btn ghost" data-action="undo" ${st?'':'disabled'}>Undo</button>
-        <button class="btn ghost" data-action="delete" title="Delete habit">🗑️</button>
+      <div class="row" style="gap:10px; flex-wrap:wrap">
+        <button class="boxbtn box-good" data-action="plus" title="Complete">✅</button>
+        <button class="boxbtn box-bad" data-action="minus" title="Didn’t">✖️</button>
       </div>
-      <div class="hint" style="margin-top:6px">Miss reasons help tailor tomorrow’s plan. Small surprise bonuses (~12%) on completes.</div>
     `;
 
-    // wire up
-    card.querySelector('[data-action="complete"]').addEventListener('click', ()=>logComplete(habit));
-    card.querySelector('[data-action="miss"]').addEventListener('click', ()=>logMissFlow(habit));
-    const startBtn = card.querySelector('[data-action="start1"]');
-    startBtn && startBtn.addEventListener('click', ()=>startOneMinute(habit));
-    const undoBtn = card.querySelector('[data-action="undo"]');
-    undoBtn && undoBtn.addEventListener('click', ()=>{
-      const k=todayKey();
-      if(habit.history[k]?.status==='complete') undoComplete(habit);
-      else if(habit.history[k]?.status==='miss') undoMiss(habit);
-      else if(habit.history[k]?.status==='started') undoStarted(habit);
-      habit.timerEnd=undefined; save(); render();
-    });
+    card.querySelector('[data-action="plus"]').addEventListener('click', ()=>logPlus(habit));
+    card.querySelector('[data-action="minus"]').addEventListener('click', ()=>logMinus(habit));
     card.querySelector('[data-action="delete"]').addEventListener('click', ()=>deleteHabit(habit.id));
     card.querySelector('[data-action="focus"]').addEventListener('click', ()=>toggleFocus(habit));
-    const cancelT = card.querySelector('[data-action="cancelTimer"]');
-    if(cancelT) cancelT.addEventListener('click', ()=>cancelTimer(habit));
-    card.querySelector('[data-action="skip"]').addEventListener('click', ()=>useSkip(habit));
-
-    // live update countdown if timer running
-    if(habit.timerEnd){
-      const chip = card.querySelector('.chip');
-      const tick = ()=>{
-        if(!habit.timerEnd) return;
-        const remain = habit.timerEnd - Date.now();
-        if(remain<=0){ chip.textContent='Processing...'; return; }
-        chip.textContent = '⏱ ' + Math.ceil(remain/1000)+'s to partial +' + fmt.format(Math.max(1, Math.round(habit.incentive*0.3)));
-        requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    }
+    card.querySelector('[data-action="edit"]').addEventListener('click', ()=>openEdit(habit));
 
     return card;
   }
 
-  // ---------- Miss reason modal & plan ----------
-  const REASONS = ['Too tired','No time','Anxious','Forgot','Travel','Low mood','Not prepped'];
-  let missHabit = null;
-  const missModal = $('#missModal');
-  const reasonButtons = $('#reasonButtons');
-  REASONS.forEach(r=>{
-    const b=document.createElement('button'); b.type='button'; b.className='btn small'; b.textContent=r;
-    b.addEventListener('click', ()=>{
-      $('#reasonFree').value = r;
-      const plan = buildPlan(r, missHabit?.name||'this habit');
-      $('#planText').textContent = plan; $('#planBox').style.display='block';
-    });
-    reasonButtons.appendChild(b);
-  });
-  function openMissModal(h){ missHabit=h; $('#reasonFree').value=''; $('#planBox').style.display='none'; missModal.showModal(); }
-  missModal.addEventListener('close', ()=>{
-    if(missModal.returnValue==='submit' && missHabit){
-      const reason = $('#reasonFree').value.trim() || '—';
-      const plan = $('#planText').textContent || '';
-      applyMiss(missHabit, reason, plan);
-      missHabit=null;
-    } else missHabit=null;
-  });
-  function buildPlan(reason, habitName){
-    // simple templates
-    const when = (()=>{
-      if(/time|travel/i.test(reason)) return 'after coffee tomorrow';
-      if(/tired|mood/i.test(reason)) return 'right after a 1-minute breathe';
-      if(/forgot/i.test(reason)) return 'immediately after brushing teeth';
-      return 'right after opening my laptop';
-    })();
-    const tiny = (()=>{
-      if(/workout/i.test(habitName)) return 'do 10 bodyweight squats';
-      if(/meditat/i.test(habitName)) return 'sit and breathe for 60s';
-      if(/sleep/i.test(habitName)) return 'put phone on charger outside bedroom';
-      return 'do a 60-second starter';
-    })();
-    return `If it’s ${when}, then I will ${tiny} for ${habitName}.`;
+  // ---------- Edit Habit ----------
+  let editHabitRef=null;
+  const editModal = $('#editModal');
+  function openEdit(h){
+    editHabitRef = h;
+    $('#editName').value = h.name||'';
+    $('#editEmoji').value = h.emoji||'';
+    $('#editColor').value = h.color||'#7ee787';
+    $('#editStart').value = String(h.incentive||0);
+    editModal.showModal();
   }
+  editModal.addEventListener('close', ()=>{
+    if(editModal.returnValue==='submit' && editHabitRef){
+      editHabitRef.name = String($('#editName').value||editHabitRef.name);
+      editHabitRef.emoji = String($('#editEmoji').value||'').slice(0,2);
+      editHabitRef.color = $('#editColor').value || editHabitRef.color;
+      const val = Number($('#editStart').value);
+      if(isFinite(val) && val>=0) editHabitRef.incentive = round2(val);
+      save(); render();
+    }
+    editHabitRef=null;
+  });
 
-  // ---------- Wire-up: add habit, spend, settings ----------
-  $('#addHabitBtn').addEventListener('click', ()=> addHabit($('#newHabitName').value, $('#newHabitStart').value));
+  // ---------- Wire-up global ----------
+  $('#addHabitBtn').addEventListener('click', ()=>{
+    addHabit($('#newHabitName').value, $('#newHabitStart').value, $('#newHabitEmoji').value, $('#newHabitColor').value);
+  });
   $('#newHabitName').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('#addHabitBtn').click(); }});
   $('#newHabitStart').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('#addHabitBtn').click(); }});
+  $('#newHabitEmoji').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('#addHabitBtn').click(); }});
 
   const spendModal = $('#spendModal');
   $('#spendBtn').addEventListener('click', ()=>spendModal.showModal());
@@ -751,26 +549,45 @@
     }
   });
 
-  const settingsModal = $('#settingsModal');
+  const settingsModal = document.createElement('dialog');
+  settingsModal.innerHTML = `
+    <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
+      <h3>Settings</h3>
+      <div class="row" style="gap:10px">
+        <label class="pill">Global step (±):</label>
+        <input id="stepInput" class="number" type="number" inputmode="decimal" min="1" step="1" placeholder="$ step" style="max-width:130px" />
+      </div>
+      <div class="section-title">Goal</div>
+      <div class="row" style="gap:8px">
+        <input id="goalTitle" class="input" placeholder="Goal name" />
+        <input id="goalPrice" class="number" type="number" inputmode="decimal" min="1" step="1" placeholder="Price $" style="max-width:140px" />
+      </div>
+      <div class="row" style="justify-content:flex-end; margin-top:10px">
+        <button class="btn" value="cancel">Close</button>
+        <button class="btn" value="submit">Save</button>
+      </div>
+    </form>`;
+  document.body.appendChild(settingsModal);
+
   $('#settingsBtn').addEventListener('click', ()=>{
-    $('#stepInput').value = state.step;
-    $('#goalTitle').value = state.goal?.name || '';
-    $('#goalPrice').value = state.goal?.price || '';
+    settingsModal.querySelector('#stepInput').value = state.step;
+    settingsModal.querySelector('#goalTitle').value = state.goal?.name || '';
+    settingsModal.querySelector('#goalPrice').value = state.goal?.price || '';
     settingsModal.showModal();
   });
   settingsModal.addEventListener('close', ()=>{
     if(settingsModal.returnValue==='submit'){
-      const n = Math.max(1, Math.floor(Number($('#stepInput').value)||state.step||5));
-      state.step = n; // update default; per-habit steps adapt weekly
-      const gName = String($('#goalTitle').value||'').trim();
-      const gPrice = Math.max(1, Math.floor(Number($('#goalPrice').value)|| (state.goal?.price || 150)));
+      const n = Math.max(1, Math.floor(Number(settingsModal.querySelector('#stepInput').value)||state.step||5));
+      state.step = n;
+      const gName = String(settingsModal.querySelector('#goalTitle').value||'').trim();
+      const gPrice = Math.max(1, Math.floor(Number(settingsModal.querySelector('#goalPrice').value)|| (state.goal?.price || 150)));
       if(!state.goal) state.goal = { name:gName||"Treat yo' self", price:gPrice, allocated:0 };
       else { state.goal.name = gName||state.goal.name; state.goal.price = gPrice; state.goal.allocated = Math.min(state.goal.price, state.goal.allocated||0); }
+      // also update default step for new habits (existing habits keep their current step)
       save(); render();
     }
   });
 
-  // ---------- Start ----------
   function tickHeader(){
     $('#todayText').textContent = niceDate(new Date());
     requestAnimationFrame(tickHeader);
@@ -782,4 +599,3 @@
 </script>
 </body>
 </html>
-
