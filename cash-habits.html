@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>Cash Habit Rewards</title>
+<title>Cash Habits</title>
 
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -11,10 +11,9 @@
 
 <style>
   :root{
-    --bg:#0f1115; --card:#171a21; --ink:#e9ecf1; --muted:#9aa3b2;
-    --ring:#2a2f3a; --shadow:#00000055;
-    --good:#1b8f63; --good-d:#117d57;
-    --bad:#b0232c; --bad-d:#7f1820;
+    --bg:#0f1115; --card:#171a21; --ink:#e9ecf1; --muted:#9aa3b2; --ring:#2a2f3a; --shadow:#0006;
+    --good:#1b8f63; --good-d:#117d57; --bad:#b0232c; --bad-d:#7f1820; --neutral:#2a3142;
+    --green:#20c997; --red:#ff6b6b; --grey:#3b4356;
   }
   html,body{height:100%}
   body{
@@ -22,50 +21,32 @@
     font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
     -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
   }
-  .app{ max-width:820px; margin:0 auto; padding: env(safe-area-inset-top) 14px 18px }
+  .app{ max-width:860px; margin:0 auto; padding: env(safe-area-inset-top) 14px 18px }
+  .row{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .split{justify-content:space-between}
+  .center{justify-content:center}
+  .grow{flex:1}
+  .sub{color:var(--muted); font-size:12px}
+  .balance{font-weight:800; font-size:26px}
+  .big{font-weight:800; font-size:22px}
   .topbar{
-    position:sticky; top:0; z-index:20; backdrop-filter: blur(10px);
+    position:sticky; top:0; z-index:10; backdrop-filter: blur(10px);
     background: linear-gradient(180deg, rgba(15,17,21,.92), rgba(15,17,21,.76) 60%, transparent);
     padding: 10px 0 12px; border-bottom:1px solid #141824;
   }
-  .row{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
-  .row.split{justify-content:space-between}
-  .center{justify-content:center}
-  .grow{flex:1}
-  .balance{font-weight:800; font-size:26px; letter-spacing:.2px}
-  .sub{color:var(--muted); font-size:12px}
-  .section-title{margin:18px 2px 6px; color:var(--muted); font-weight:700; font-size:13px; letter-spacing:.35px}
 
   .card{
     background:linear-gradient(180deg, var(--card), #141821);
-    border:2px solid var(--ring); border-radius:16px; padding:14px;
-    box-shadow: 0 12px 24px var(--shadow); margin:12px 0;
+    border:1.5px solid var(--ring); border-radius:16px; padding:14px;
+    box-shadow: 0 10px 20px var(--shadow); margin:12px 0;
   }
-  .card h3{margin:0 0 4px; font-size:18px}
-
-  .tag{
-    display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px;
-    background:#0f1320; border:1px solid #1a2030; color:#cfd6e6; font-size:12px; font-weight:700;
-  }
-  .pill{ padding:6px 10px; border-radius:999px; border:1px dashed #2b3344; color:var(--muted); font-size:12px; font-weight:700 }
-  .input, .number{
+  .card h3{margin:0 0 6px; font-size:18px}
+  .input, .number, select{
     width:100%; box-sizing:border-box; padding:12px 12px; color:var(--ink);
     background:#0e121b; border:1px solid var(--ring); border-radius:12px; outline:none;
   }
   .number{appearance:textfield}
   .number::-webkit-outer-spin-button,.number::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
-
-  /* Square action buttons */
-  .boxbtn{
-    appearance:none; -webkit-appearance:none; cursor:pointer;
-    border:2px solid transparent; color:#fff;
-    padding:16px; border-radius:14px; font-weight:800; font-size:22px;
-    display:inline-grid; place-items:center; min-width:72px; min-height:64px;
-    box-shadow: 0 6px 18px var(--shadow); user-select:none; transition:.15s transform ease;
-  }
-  .boxbtn:active{ transform: translateY(1px) }
-  .box-good{ background:linear-gradient(180deg, var(--good), var(--good-d)) }
-  .box-bad{ background:linear-gradient(180deg, var(--bad), var(--bad-d)) }
 
   .btn{
     appearance:none; -webkit-appearance:none; cursor:pointer;
@@ -74,83 +55,111 @@
   }
   .btn:active{ transform: translateY(1px) }
   .btn.small{ padding:6px 8px; border-radius:10px; font-size:12px }
-  .btn.icon{ width:40px; height:40px; display:inline-grid; place-items:center; padding:0; font-size:18px }
 
-  /* Goal bar */
-  .goalTrack{height:10px;border:1px solid var(--ring);border-radius:10px;overflow:hidden}
-  .goalFill{height:100%;width:0%; background:linear-gradient(90deg,#1bd67b,#7ee787)}
+  /* Tally buttons */
+  .tallyBtn{
+    appearance:none; -webkit-appearance:none; cursor:pointer; user-select:none;
+    border:2px solid transparent; color:#fff; font-size:22px; font-weight:800;
+    display:inline-grid; place-items:center; min-width:64px; min-height:56px; border-radius:14px;
+    box-shadow: 0 6px 18px var(--shadow);
+  }
+  .tallyUp{ background:linear-gradient(180deg, var(--good), var(--good-d)) }
+  .tallyDown{ background:linear-gradient(180deg, var(--bad), var(--bad-d)) }
 
-  /* Per-card accent via inline border color */
-  .emoji{ font-size:20px; filter: drop-shadow(0 2px 6px rgba(255,255,255,.08)) }
+  .tag{
+    display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px;
+    background:#0f1320; border:1px solid #1a2030; color:#cfd6e6; font-size:12px; font-weight:700;
+  }
+
+  /* Mini streak chart dots (per habit) */
+  .streak{ display:flex; gap:4px; flex-wrap:wrap; margin-top:6px }
+  .dot{ width:12px; height:12px; border-radius:4px; border:1px solid #2a3142; background:#0f1320 }
+  .dot.plus{ background:#1b8f63 }
+  .dot.minus{ background:#7f1820 }
+  .dot.today{ outline:2px solid #e9ecf1; outline-offset:1px }
+
+  /* Daily points bar graph */
+  .graphWrap{ width:100%; height:140px; }
+  #dailyGraph{ width:100%; height:140px; display:block; }
 
   /* Confetti canvas */
-  #fx{ position:fixed; left:0; top:0; width:100vw; height:100vh; pointer-events:none; z-index:999 }
-
-  /* Streak mini-chart */
-  .streak{ display:flex; gap:4px; flex-wrap:wrap; margin-top:8px }
-  .dot{
-    width:14px; height:14px; border-radius:4px; border:1px solid #2a3142; background:#0f1320;
-  }
-  .dot.plus{ background:#1b8f63 }   /* green for completed day */
-  .dot.minus{ background:#7f1820 }  /* red for miss-only day */
-  .dot.today{ outline:2px solid #e9ecf1; outline-offset:1px } /* highlight today */
-  .legend{ color:var(--muted); font-size:11px }
-
-  .empty{ color:var(--muted); text-align:center; padding:18px 8px; border:1px dashed #2a3142; border-radius:14px }
+  #fx{ position:fixed; inset:0; width:100vw; height:100vh; pointer-events:none; z-index:999 }
   .spacer{height: env(safe-area-inset-bottom)}
+  .emoji{font-size:18px}
 </style>
 </head>
 <body>
 <canvas id="fx"></canvas>
 
 <div class="app">
+  <!-- Header / Tally -->
   <div class="topbar">
     <div class="row split">
       <div>
-        <div class="sub">Total Cash Available</div>
+        <div class="sub">Cash Available</div>
         <div class="balance" id="cashTotal">$0.00</div>
+      </div>
+      <div>
+        <div class="sub">Points</div>
+        <div class="balance" id="pointsTotal">0</div>
       </div>
       <div class="row">
         <button class="btn" id="spendBtn">🛍️ Spend</button>
-        <button class="btn" id="settingsBtn" title="Settings">⚙️</button>
+        <button class="btn" id="settingsBtn">⚙️</button>
       </div>
     </div>
 
-    <div class="row" style="margin-top:6px; gap:12px">
-      <div class="grow">
-        <div class="row split">
-          <div class="sub">Next Goal: <span id="goalName">—</span> (<span id="goalNeed">$0</span> left)</div>
-          <div class="sub">Today: <span id="todayText">—</span> · Step ±<span id="stepDisplay">$5</span></div>
-        </div>
-        <div class="goalTrack"><div id="goalBar" class="goalFill"></div></div>
-      </div>
+    <div class="row center" style="gap:14px; margin-top:10px">
+      <button class="tallyBtn tallyUp" id="tallyUp">⬆️</button>
+      <div class="tag">Today: <span id="todayText">—</span> · Step ±<span id="stepDisplay">$5</span></div>
+      <button class="tallyBtn tallyDown" id="tallyDown">⬇️</button>
     </div>
   </div>
 
-  <div class="section-title">Focus Today</div>
-  <div id="focusList"></div>
-
-  <div class="section-title">All Habits</div>
-  <div id="habitList"></div>
-
+  <!-- Graph -->
   <div class="card">
-    <h3>Add Habit</h3>
-    <div class="row" style="gap:8px; margin-bottom:8px">
-      <input id="newHabitName" class="input" placeholder="Habit name (e.g., Workout, Mindfulness)" />
-      <input id="newHabitEmoji" class="input" placeholder="Emoji (e.g., 💪 or 🧘)" style="max-width:110px" />
+    <h3>Daily Points</h3>
+    <div class="graphWrap"><canvas id="dailyGraph" width="800" height="140"></canvas></div>
+    <div class="sub">Green = net positive • Red = net negative</div>
+  </div>
+
+  <!-- Habits -->
+  <div class="card">
+    <h3>Habits (good)</h3>
+    <div id="habitList"></div>
+    <div class="row" style="gap:8px; margin-top:10px">
+      <input id="newHabitName" class="input" placeholder="Habit name (e.g., Mindfulness)" />
+      <input id="newHabitEmoji" class="input" placeholder="Emoji (e.g., 🧘)" style="max-width:110px" />
       <input id="newHabitColor" type="color" class="input" value="#7ee787" style="max-width:110px; padding:6px 8px; height:44px" />
-      <input id="newHabitStart" type="number" class="number" inputmode="decimal" min="0" step="1" placeholder="Start $" style="max-width:130px" />
     </div>
-    <div class="row">
+    <div class="row" style="gap:8px; margin-top:6px">
+      <input id="newHabitStart" type="number" class="number" min="0" step="1" placeholder="Start reward $ (default 20)" />
+      <input id="newHabitPts" type="number" class="number" step="1" placeholder="Points per completion (default 10)" />
       <button class="btn" id="addHabitBtn">Add Habit</button>
     </div>
-    <div class="sub" style="margin-top:8px">
-      Tap ✅ to earn and lower incentive; tap ✖️ to raise incentive. Log multiple moments per day.
+  </div>
+
+  <!-- Vices -->
+  <div class="card">
+    <h3>Vices (temptations)</h3>
+    <div id="viceList"></div>
+    <div class="row" style="gap:8px; margin-top:10px">
+      <input id="newViceName" class="input" placeholder="Vice name (e.g., Doomscroll)" />
+      <input id="newViceEmoji" class="input" placeholder="Emoji (e.g., 📱)" style="max-width:110px" />
+      <input id="newViceColor" type="color" class="input" value="#ff6b6b" style="max-width:110px; padding:6px 8px; height:44px" />
+    </div>
+    <div class="row" style="gap:8px; margin-top:6px">
+      <input id="newViceCash" type="number" class="number" step="1" placeholder="Cash penalty $ (default 0)" />
+      <input id="newVicePts" type="number" class="number" step="1" placeholder="Points penalty (default 10)" />
+      <button class="btn" id="addViceBtn">Add Vice</button>
     </div>
   </div>
 
-  <div class="section-title">History (today)</div>
-  <div id="todayHistory" class="card"></div>
+  <!-- History (today) -->
+  <div class="card">
+    <h3>Today</h3>
+    <div id="todayHistory"></div>
+  </div>
 
   <div class="spacer"></div>
 </div>
@@ -159,7 +168,7 @@
 <dialog id="spendModal">
   <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
     <h3>Spend Cash</h3>
-    <div class="row"><input id="spendAmt" class="number" type="number" inputmode="decimal" min="0" step="1" placeholder="Amount $" /></div>
+    <div class="row"><input id="spendAmt" class="number" type="number" min="0" step="1" placeholder="Amount $" /></div>
     <div class="row"><input id="spendNote" class="input" placeholder="What did you buy? (optional)" /></div>
     <div class="row" style="justify-content:flex-end">
       <button class="btn" value="cancel">Cancel</button>
@@ -168,16 +177,44 @@
   </form>
 </dialog>
 
-<!-- Edit Habit Modal -->
+<!-- Tally Up Modal (choose habit) -->
+<dialog id="upModal">
+  <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
+    <h3>What did you do?</h3>
+    <div id="upList"></div>
+    <div class="row" style="justify-content:flex-end; margin-top:10px">
+      <button class="btn" value="cancel">Close</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Tally Down Modal (choose habit missed or vice did) -->
+<dialog id="downModal">
+  <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
+    <h3>Log a miss or a vice</h3>
+    <div class="row" style="gap:8px">
+      <select id="downMode">
+        <option value="habit">Missed a habit</option>
+        <option value="vice">Did a vice</option>
+      </select>
+    </div>
+    <div id="downList" style="margin-top:10px"></div>
+    <div class="row" style="justify-content:flex-end; margin-top:10px">
+      <button class="btn" value="cancel">Close</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Edit Habit/Vice Modal -->
 <dialog id="editModal">
   <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
-    <h3>Edit Habit</h3>
+    <h3 id="editTitle">Edit</h3>
     <div class="row" style="gap:8px">
       <input id="editName" class="input" placeholder="Name" />
       <input id="editEmoji" class="input" placeholder="Emoji" style="max-width:110px" />
       <input id="editColor" type="color" class="input" value="#7ee787" style="max-width:110px; padding:6px 8px; height:44px" />
-      <input id="editStart" type="number" class="number" min="0" step="1" placeholder="Current reward $" style="max-width:160px" />
     </div>
+    <div class="row" id="editMore" style="gap:8px; margin-top:8px"></div>
     <div class="row" style="justify-content:flex-end; margin-top:10px">
       <button class="btn" value="cancel">Cancel</button>
       <button class="btn" value="submit">Save</button>
@@ -190,7 +227,6 @@
   // ---------- Helpers ----------
   const $ = sel => document.querySelector(sel);
   const fmt = new Intl.NumberFormat(undefined, { style:'currency', currency:'USD' });
-
   function todayKey(d=new Date()){
     const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
     return `${y}-${m}-${dd}`;
@@ -199,375 +235,286 @@
   function cid(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
   function round2(n){ return Math.round((Number(n)||0)*100)/100; }
   function buzz(ms=30){ try{ navigator.vibrate?.(ms); }catch{} }
+  function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-  // WebAudio blip
+  // Confetti & sound (lightweight)
   let audioCtx=null;
-  function playKaching(){
+  function playBlip(){
     try{
       audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-      const o1 = audioCtx.createOscillator(), o2=audioCtx.createOscillator(), g=audioCtx.createGain();
-      o1.type='square'; o2.type='triangle';
-      o1.frequency.setValueAtTime(880, audioCtx.currentTime);
-      o2.frequency.setValueAtTime(1320, audioCtx.currentTime);
+      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+      o.type='triangle'; o.frequency.setValueAtTime(880, audioCtx.currentTime);
       g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.35, audioCtx.currentTime+0.01);
+      g.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime+0.02);
       g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+0.20);
-      o1.connect(g); o2.connect(g); g.connect(audioCtx.destination);
-      o1.start(); o2.start();
-      o1.stop(audioCtx.currentTime+0.22); o2.stop(audioCtx.currentTime+0.22);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(); o.stop(audioCtx.currentTime+0.22);
     }catch{}
   }
-
-  // Confetti
-  const fxCanvas = (()=>{ const c=document.createElement('canvas'); c.id='fx'; document.body.prepend(c); return c; })();
-  const fxCtx = fxCanvas.getContext('2d');
-  function sizeFx(){ fxCanvas.width=innerWidth*devicePixelRatio; fxCanvas.height=innerHeight*devicePixelRatio; }
-  addEventListener('resize', sizeFx); sizeFx();
-  function fireConfetti(hue=120){
-    const particles=[];
-    const N=90;
+  const fx = $('#fx'), fxCtx = fx.getContext('2d');
+  function resizeFx(){ fx.width=innerWidth*devicePixelRatio; fx.height=innerHeight*devicePixelRatio; }
+  addEventListener('resize', resizeFx); resizeFx();
+  function confetti(hue=120){
+    const N=80, parts=[];
     for(let i=0;i<N;i++){
-      particles.push({
-        x: (Math.random()*innerWidth)*devicePixelRatio,
-        y: (innerHeight*0.25 + Math.random()*innerHeight*0.1)*devicePixelRatio,
-        vx: (Math.random()-0.5)*3*devicePixelRatio,
-        vy: (Math.random()*-6 - 6)*devicePixelRatio,
-        g: 0.22*devicePixelRatio,
-        r: Math.random()*3+2,
-        a: 1.0,
-        hue: hue + (Math.random()*40-20)
-      });
+      parts.push({x:Math.random()*fx.width,y:fx.height*0.3+(Math.random()*fx.height*0.1),vx:(Math.random()-0.5)*3,vy:-8-Math.random()*6,g:0.25,r:2+Math.random()*3,a:1,h:hue+Math.random()*40-20});
     }
-    const start = performance.now();
+    const start=performance.now();
     function tick(t){
-      fxCtx.clearRect(0,0,fxCanvas.width,fxCanvas.height);
-      for(const p of particles){
-        p.vy += p.g; p.x += p.vx; p.y += p.vy; p.a *= 0.985;
-        fxCtx.beginPath(); fxCtx.fillStyle = `hsla(${p.hue},90%,70%,${p.a})`;
-        fxCtx.arc(p.x,p.y,p.r,0,Math.PI*2); fxCtx.fill();
+      fxCtx.clearRect(0,0,fx.width,fx.height);
+      for(const p of parts){ p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.a*=0.985;
+        fxCtx.beginPath(); fxCtx.fillStyle=`hsla(${p.h},90%,70%,${p.a})`; fxCtx.arc(p.x,p.y,p.r,0,Math.PI*2); fxCtx.fill();
       }
-      if(t-start < 1000){ requestAnimationFrame(tick); }
-      else fxCtx.clearRect(0,0,fxCanvas.width,fxCanvas.height);
+      if(t-start<900) requestAnimationFrame(tick);
+      else fxCtx.clearRect(0,0,fx.width,fx.height);
     }
     requestAnimationFrame(tick);
   }
-
-  // ---------- State ----------
-  const STORAGE_KEY='cashHabitRewards.v4';
-  /**
-   * version, cashTotal, step
-   * habits: {
-   *  id, name, emoji, color, incentive, step, streak,
-   *  history: { [date]: { events: Array<{ts:number,type:'plus'|'minus',amount:number}> } },
-   *  focusToday?: string
-   * }
-   * transactions: [{tsISO, evTs?, type:'earn'|'spend', habitId?, habitName?, amount, date}]
-   * goal: {name, price, allocated}
-   */
-  let state = load();
-
-  function load(){
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if(saved){
-      try{
-        const s=JSON.parse(saved);
-        s.habits = (s.habits||[]).map(h=>({ emoji:'', color:'#7ee787', step:(s.step||5), streak:h.streak||0, history:{}, ...h }));
-        if(!('goal' in s)) s.goal = { name:"Treat yo' self", price:150, allocated:0 };
-        return s;
-      }catch(e){}
-    }
-    // fresh
-    return {
-      version:4,
-      cashTotal:0,
-      step:5,
-      habits:[
-        { id:cid(), name:'Workout', emoji:'💪', color:'#7ee787', incentive:20, step:5, streak:0, history:{}, focusToday:'' },
-        { id:cid(), name:'Mindfulness', emoji:'🧘', color:'#8b9cf6', incentive:20, step:5, streak:0, history:{}, focusToday:'' },
-        { id:cid(), name:'Sleep 7+ h', emoji:'😴', color:'#f7b955', incentive:20, step:5, streak:0, history:{}, focusToday:'' },
-      ],
-      transactions:[],
-      goal: { name:"Treat yo' self", price:150, allocated:0 }
-    };
-  }
-  function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-
-  // ---------- Money & effects ----------
-  function earn(habit, amount, evTs){
-    state.cashTotal = round2(state.cashTotal + amount);
-    if(state.goal){
-      state.goal.allocated = Math.min(state.goal.price, round2((state.goal.allocated||0) + amount));
-    }
-    state.transactions.push({ tsISO:new Date().toISOString(), evTs, type:'earn', habitId:habit.id, habitName:habit.name, amount, date:todayKey() });
-  }
-
-  // ---------- Log actions ----------
-  function logPlus(habit){
-    const k=todayKey();
-    if(!habit.history[k]) habit.history[k]={events:[]};
-
-    // pay current incentive, then reduce incentive by step
-    const payout = Math.max(0, habit.incentive);
-    const evTs = Date.now();
-    if(payout>0){ earn(habit, payout, evTs); }
-
-    habit.incentive = Math.max(0, round2(habit.incentive - habit.step));
-    habit.history[k].events.push({ ts:evTs, type:'plus', amount:payout });
-
-    buzz(30); playKaching(); fireConfetti(hexToHue(habit.color));
-    save(); render();
-  }
-
-  function logMinus(habit){
-    const k=todayKey();
-    if(!habit.history[k]) habit.history[k]={events:[]};
-
-    habit.incentive = round2(habit.incentive + habit.step);
-    habit.history[k].events.push({ ts:Date.now(), type:'minus', amount:habit.step });
-
-    buzz(15);
-    save(); render();
-  }
-
-  // Undo last tap (search latest event across ALL days for this habit)
-  function undoLast(habit){
-    let latestDate=null, latestIdx=-1, latestEv=null;
-    for(const [date, rec] of Object.entries(habit.history)){
-      const idx = (rec.events||[]).length-1;
-      if(idx>=0){
-        const last = rec.events[idx];
-        if(!latestEv || last.ts > latestEv.ts){
-          latestEv = last; latestIdx = idx; latestDate = date;
-        }
-      }
-    }
-    if(!latestEv){ alert('Nothing to undo for this habit.'); return; }
-
-    if(latestEv.type==='plus'){
-      // reverse cash & goal, restore incentive by step
-      const tIndex = state.transactions.findIndex(t => t.type==='earn' && t.habitId===habit.id && t.evTs===latestEv.ts);
-      if(tIndex>=0){
-        const amt = state.transactions[tIndex].amount;
-        state.cashTotal = round2(state.cashTotal - amt);
-        if(state.goal){ state.goal.allocated = Math.max(0, round2((state.goal.allocated||0) - Math.min(amt, state.goal.allocated||0))); }
-        state.transactions.splice(tIndex,1);
-      }else{
-        // fallback: reduce by event amount (best effort)
-        state.cashTotal = round2(state.cashTotal - (latestEv.amount||0));
-        if(state.goal){ state.goal.allocated = Math.max(0, round2((state.goal.allocated||0) - Math.min(latestEv.amount||0, state.goal.allocated||0))); }
-      }
-      habit.incentive = round2(habit.incentive + habit.step);
-    } else if(latestEv.type==='minus'){
-      // reverse incentive increase
-      habit.incentive = Math.max(0, round2(habit.incentive - habit.step));
-    }
-
-    habit.history[latestDate].events.splice(latestIdx,1);
-    if(habit.history[latestDate].events.length===0){ delete habit.history[latestDate]; }
-
-    buzz(20);
-    save(); render();
-  }
-
-  // ---------- Utilities ----------
   function hexToHue(hex){
     try{
-      const c = hex.replace('#','');
-      const r=parseInt(c.slice(0,2),16)/255, g=parseInt(c.slice(2,4),16)/255, b=parseInt(c.slice(4,6),16)/255;
+      const c=hex.replace('#',''); const r=parseInt(c.slice(0,2),16)/255, g=parseInt(c.slice(2,4),16)/255, b=parseInt(c.slice(4,6),16)/255;
       const mx=Math.max(r,g,b), mn=Math.min(r,g,b), d=mx-mn; let h=0;
       if(d===0) h=0; else if(mx===r) h=((g-b)/d)%6; else if(mx===g) h=(b-r)/d+2; else h=(r-g)/d+4;
       h=Math.round(60*h); if(h<0) h+=360; return h;
     }catch{ return 120; }
   }
 
+  // ---------- State ----------
+  const STORAGE_KEY='cashHabits.v5';
+  /**
+   * {
+   *  version, step, cashTotal, pointsTotal,
+   *  habits: [{id,name,emoji,color,incentive,step,points}], // points per completion
+   *  vices: [{id,name,emoji,color,cashPenalty,pointsPenalty}],
+   *  events: [{ts,date,type:'habitDone'|'habitMiss'|'vice'|'spend', habitId?, viceId?, cashDelta:number, pointsDelta:number, note?}]
+   * }
+   */
+  let state = load();
+  function load(){
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if(saved){ try{ return JSON.parse(saved); }catch{} }
+    return {
+      version:5,
+      step:5,
+      cashTotal:0,
+      pointsTotal:0,
+      habits:[
+        { id:cid(), name:'Mindfulness', emoji:'🧘', color:'#7ee787', incentive:20, step:5, points:10 },
+        { id:cid(), name:'Workout', emoji:'💪', color:'#8b9cf6', incentive:20, step:5, points:12 },
+      ],
+      vices:[
+        { id:cid(), name:'Doomscroll', emoji:'📱', color:'#ff6b6b', cashPenalty:0, pointsPenalty:10 },
+      ],
+      events:[]
+    };
+  }
+  function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+  // ---------- Money / Points ----------
+  function addEvent(ev){
+    state.events.push(ev);
+    state.cashTotal = round2(state.cashTotal + (ev.cashDelta||0));
+    state.pointsTotal = Math.round((state.pointsTotal + (ev.pointsDelta||0)));
+    save(); render();
+  }
+
+  // ---------- Tally Actions ----------
+  function doHabitDone(h){
+    const payout = Math.max(0, h.incentive);
+    // Cash goes up by incentive, then incentive drops by step
+    addEvent({ ts:Date.now(), date:todayKey(), type:'habitDone', habitId:h.id, cashDelta:payout, pointsDelta:(h.points||10) });
+    h.incentive = Math.max(0, round2(h.incentive - (h.step||state.step)));
+    buzz(30); playBlip(); confetti(hexToHue(h.color||'#7ee787'));
+    save(); render();
+  }
+  function doHabitMiss(h){
+    // Incentive increases by step, points go down by habit.points
+    const step = Math.max(1, h.step||state.step);
+    h.incentive = round2(h.incentive + step);
+    addEvent({ ts:Date.now(), date:todayKey(), type:'habitMiss', habitId:h.id, cashDelta:0, pointsDelta:-(h.points||10) });
+    buzz(15);
+  }
+  function doVice(v){
+    // Cash penalty (subtract) and points penalty (subtract)
+    const cashPen = -Math.abs(Number(v.cashPenalty||0));
+    const ptsPen  = -Math.abs(Number(v.pointsPenalty||10));
+    addEvent({ ts:Date.now(), date:todayKey(), type:'vice', viceId:v.id, cashDelta:cashPen, pointsDelta:ptsPen });
+    buzz(15);
+  }
   function spend(amount, note){
-    const amt = Number(amount)||0;
-    if(amt<=0) return;
-    if(amt>state.cashTotal){ alert(`You only have ${fmt.format(state.cashTotal)} available.`); return; }
-    state.cashTotal = round2(state.cashTotal - amt);
-    if(state.goal){ state.goal.allocated = Math.max(0, round2(state.goal.allocated - Math.min(amt, state.goal.allocated||0))); }
-    state.transactions.push({ tsISO:new Date().toISOString(), type:'spend', amount:amt, date:todayKey(), note: String(note||'') });
-    save(); render();
+    const a=Number(amount)||0; if(a<=0) return;
+    if(a>state.cashTotal){ alert(`You only have ${fmt.format(state.cashTotal)} available.`); return; }
+    addEvent({ ts:Date.now(), date:todayKey(), type:'spend', cashDelta:-a, pointsDelta:0, note:String(note||'') });
   }
 
-  function addHabit(name, start, emoji, color){
-    const nm = String(name||'').trim();
-    if(!nm){ alert('Please enter a habit name.'); return; }
-    let st = Number(start); if(!isFinite(st) || st<0) st = 20;
-    const col = /^#?[0-9a-f]{6}$/i.test(String(color||'')) ? (String(color).startsWith('#')?color:'#'+color) : '#7ee787';
-    state.habits.push({ id:cid(), name:nm, emoji:String(emoji||'').trim().slice(0,2), color:col, incentive:round2(st), step:state.step, streak:0, history:{}, focusToday:'' });
-    save(); render();
-    $('#newHabitName').value=''; $('#newHabitStart').value=''; $('#newHabitEmoji').value=''; // keep last used color
-  }
-
-  function deleteHabit(id){
-    if(!confirm('Delete this habit? Past transactions stay in history.')) return;
-    state.habits = state.habits.filter(h=>h.id!==id);
-    save(); render();
-  }
-
-  function toggleFocus(habit){
-    const k=todayKey();
-    if(habit.focusToday===k){ habit.focusToday=''; }
-    else{
-      const focused = state.habits.filter(h=>h.focusToday===k);
-      if(focused.length>=3){ alert('Limit is 3 Focus Today habits.'); return; }
-      habit.focusToday=k;
-    }
-    save(); render();
-  }
-
-  // ---------- Streak calculation ----------
-  function recomputeStreak(habit){
-    // Count consecutive days up to today with any plus
-    let count=0;
-    for(let i=0;i<365;i++){
-      const d=new Date(); d.setDate(d.getDate()-i); const key=todayKey(d);
-      const ev=habit.history[key]?.events||[];
-      const hasPlus = ev.some(e=>e.type==='plus' && e.amount>0);
-      if(hasPlus) count++; else break;
-    }
-    habit.streak = count;
-  }
-
-  // ---------- UI ----------
-  function render(){
-    $('#cashTotal').textContent = fmt.format(state.cashTotal);
-    $('#todayText').textContent = niceDate(new Date());
-    $('#stepDisplay').textContent = `$${state.step}`;
-    $('#goalName').textContent = state.goal?.name || '—';
-    const need = Math.max(0, (state.goal?.price||0) - (state.goal?.allocated||0));
-    $('#goalNeed').textContent = fmt.format(need);
-    const pct = Math.min(100, ((state.goal?.allocated||0)/(state.goal?.price||1))*100);
-    $('#goalBar').style.width = pct + '%';
-
-    const k=todayKey();
-    // Recompute streaks
-    state.habits.forEach(recomputeStreak);
-
-    const focused = state.habits.filter(h=>h.focusToday===k).sort((a,b)=>b.incentive-a.incentive);
-    const others = state.habits.filter(h=>h.focusToday!==k).sort((a,b)=>b.incentive-a.incentive);
-
-    const focusList = $('#focusList');
-    focusList.innerHTML = focused.length ? '' : `<div class="empty">Tap 🎨 to set emoji/color. Tap ⭐ to pick up to 3 Focus Today.</div>`;
-    focused.forEach(h=> focusList.appendChild(habitCard(h)));
-
-    const list = $('#habitList');
-    list.innerHTML = '';
-    others.forEach(h=> list.appendChild(habitCard(h)));
-
-    // today history
-    const todays = state.transactions.filter(t=>t.date===k).slice(-18);
-    const todayDiv = $('#todayHistory');
-    todayDiv.innerHTML = todays.length? todays.map(t=>{
-      if(t.type==='earn'){
-        return `<div class="row split" style="margin:6px 0">
-          <div>✅ ${escapeHTML(t.habitName||'Habit')}</div>
-          <div style="font-weight:700">${fmt.format(t.amount)}</div>
-        </div>`;
-      } else {
-        return `<div class="row split" style="margin:6px 0">
-          <div>🛍️ ${escapeHTML(t.note||'Spent')}</div>
-          <div style="font-weight:700">−${fmt.format(t.amount)}</div>
-        </div>`;
-      }
-    }).join('') : `<div class="sub">No entries yet today.</div>`;
-  }
-
-  function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-  function habitCard(habit){
-    const k=todayKey();
-    const ev = habit.history[k]?.events || [];
-    const plusCount = ev.filter(e=>e.type==='plus').length;
-    const minusCount = ev.filter(e=>e.type==='minus').length;
-
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.style.borderColor = habit.color||'#7ee787';   /* custom border color */
-
-    // Build 14-day mini streak chart (oldest→newest)
-    const dots = [];
-    for(let i=13;i>=0;i--){
-      const d=new Date(); d.setDate(d.getDate()-i); const key=todayKey(d);
-      const dayEv = habit.history[key]?.events || [];
-      const hasPlus = dayEv.some(e=>e.type==='plus' && e.amount>0);
-      const hasMinusOnly = dayEv.length>0 && !hasPlus;
-      dots.push(`<span class="dot ${hasPlus?'plus':hasMinusOnly?'minus':''} ${i===0?'today':''}" title="${key}"></span>`);
-    }
-
-    card.innerHTML = `
-      <div class="row split" style="margin-bottom:8px">
+  // ---------- UI: Lists ----------
+  function habitRow(h){
+    const wrap=document.createElement('div');
+    wrap.className='card';
+    wrap.style.borderColor=h.color||'#7ee787';
+    wrap.innerHTML=`
+      <div class="row split">
         <div class="row" style="gap:10px">
-          <button class="btn icon" title="Focus Today" data-action="focus">⭐</button>
-          <div>
-            <h3><span class="emoji">${escapeHTML(habit.emoji||'')}</span> ${escapeHTML(habit.name)}</h3>
-            <div class="row" style="gap:8px">
-              <span class="tag" title="Next reward if you tap ✅">${fmt.format(habit.incentive)}</span>
-              <span class="tag" title="Step">±$${habit.step}</span>
-              <span class="tag" title="Streak">🔥 ${habit.streak||0}</span>
-              <button class="btn small" data-action="edit">🎨 Edit</button>
-              <button class="btn small" data-action="delete">🗑️</button>
-              <button class="btn small" data-action="undo">↩️ Undo last tap</button>
-            </div>
-            <div class="streak" aria-label="streak chart">
-              ${dots.join('')}
-              <div class="legend">Last 14 days · green=done · red=miss-only · ◽=no log · outlined=today</div>
-            </div>
-          </div>
+          <div class="big"><span class="emoji">${escapeHTML(h.emoji||'')}</span> ${escapeHTML(h.name)}</div>
         </div>
-        <div class="tag">Today: +${plusCount} / −${minusCount}</div>
+        <div class="row" style="gap:8px">
+          <span class="tag">${fmt.format(h.incentive)} next</span>
+          <span class="tag">±$${h.step||state.step}</span>
+          <span class="tag">+${h.points||10} pts</span>
+          <button class="btn small" data-edit>🎨 Edit</button>
+          <button class="btn small" data-del>🗑️</button>
+        </div>
       </div>
-
-      <div class="row center" style="gap:14px; flex-wrap:wrap; margin-top:6px">
-        <button class="boxbtn box-good" data-action="plus" title="Complete">✅</button>
-        <button class="boxbtn box-bad" data-action="minus" title="Didn’t">✖️</button>
+      <div class="row center" style="gap:12px; margin-top:8px">
+        <button class="tallyBtn tallyUp" data-done>✅</button>
+        <button class="tallyBtn tallyDown" data-miss>✖️</button>
+      </div>
+      <div class="streak" aria-label="mini chart">
+        ${miniDots(h.id).join('')}
       </div>
     `;
-
-    card.querySelector('[data-action="plus"]').addEventListener('click', ()=>logPlus(habit));
-    card.querySelector('[data-action="minus"]').addEventListener('click', ()=>logMinus(habit));
-    card.querySelector('[data-action="undo"]').addEventListener('click', ()=>undoLast(habit));
-    card.querySelector('[data-action="delete"]').addEventListener('click', ()=>deleteHabit(habit.id));
-    card.querySelector('[data-action="focus"]').addEventListener('click', ()=>toggleFocus(habit));
-    card.querySelector('[data-action="edit"]').addEventListener('click', ()=>openEdit(habit));
-
-    return card;
+    wrap.querySelector('[data-done]').onclick=()=>doHabitDone(h);
+    wrap.querySelector('[data-miss]').onclick=()=>doHabitMiss(h);
+    wrap.querySelector('[data-del]').onclick=()=>{ if(confirm('Delete habit?')){ state.habits=state.habits.filter(x=>x.id!==h.id); save(); render(); } };
+    wrap.querySelector('[data-edit]').onclick=()=>openEdit('habit', h);
+    return wrap;
+  }
+  function viceRow(v){
+    const wrap=document.createElement('div');
+    wrap.className='card';
+    wrap.style.borderColor=v.color||'#ff6b6b';
+    wrap.innerHTML=`
+      <div class="row split">
+        <div class="big"><span class="emoji">${escapeHTML(v.emoji||'')}</span> ${escapeHTML(v.name)}</div>
+        <div class="row" style="gap:8px">
+          <span class="tag">${v.cashPenalty?`−${fmt.format(v.cashPenalty)}`:'$0'} cash</span>
+          <span class="tag">−${Math.abs(v.pointsPenalty||10)} pts</span>
+          <button class="btn small" data-edit>🎨 Edit</button>
+          <button class="btn small" data-del>🗑️</button>
+        </div>
+      </div>
+      <div class="row center" style="gap:12px; margin-top:8px">
+        <button class="tallyBtn tallyDown" data-do>Log ⬇️</button>
+      </div>
+    `;
+    wrap.querySelector('[data-do]').onclick=()=>doVice(v);
+    wrap.querySelector('[data-del]').onclick=()=>{ if(confirm('Delete vice?')){ state.vices=state.vices.filter(x=>x.id!==v.id); save(); render(); } };
+    wrap.querySelector('[data-edit]').onclick=()=>openEdit('vice', v);
+    return wrap;
   }
 
-  // ---------- Edit Habit ----------
-  let editHabitRef=null;
+  // ---------- Tally Modals ----------
+  const upModal = $('#upModal');
+  const upList  = $('#upList');
+  const downModal = $('#downModal');
+  const downList  = $('#downList');
+  const downMode  = $('#downMode');
+
+  $('#tallyUp').onclick = ()=>{
+    upList.innerHTML = state.habits.length? '' : '<div class="sub">Add a habit first.</div>';
+    state.habits.forEach(h=>{
+      const b=document.createElement('button');
+      b.className='btn'; b.style=`border-color:${h.color};`;
+      b.textContent = `${h.emoji||''} ${h.name}  · +${fmt.format(h.incentive)}  · +${h.points||10}pts`;
+      b.onclick = ()=>{ upModal.close(); doHabitDone(h); };
+      upList.appendChild(b);
+    });
+    upModal.showModal();
+  };
+
+  function renderDownList(){
+    downList.innerHTML='';
+    if(downMode.value==='habit'){
+      if(!state.habits.length){ downList.innerHTML='<div class="sub">Add a habit first.</div>'; return; }
+      state.habits.forEach(h=>{
+        const b=document.createElement('button');
+        b.className='btn'; b.style=`border-color:${h.color};`;
+        b.textContent = `${h.emoji||''} Missed ${h.name}  · incentive +$${h.step||state.step}  · −${h.points||10}pts`;
+        b.onclick = ()=>{ downModal.close(); doHabitMiss(h); };
+        downList.appendChild(b);
+      });
+    } else {
+      if(!state.vices.length){ downList.innerHTML='<div class="sub">Add a vice first.</div>'; return; }
+      state.vices.forEach(v=>{
+        const b=document.createElement('button');
+        b.className='btn'; b.style=`border-color:${v.color};`;
+        const cashTxt = v.cashPenalty? ` −${fmt.format(Math.abs(v.cashPenalty))}` : '';
+        b.textContent = `${v.emoji||''} ${v.name}  ·${cashTxt}  · −${Math.abs(v.pointsPenalty||10)}pts`;
+        b.onclick = ()=>{ downModal.close(); doVice(v); };
+        downList.appendChild(b);
+      });
+    }
+  }
+  downMode.onchange = renderDownList;
+  $('#tallyDown').onclick = ()=>{ renderDownList(); downModal.showModal(); };
+
+  // ---------- Edit Modal ----------
+  let editObj=null, editType='habit';
   const editModal = $('#editModal');
-  function openEdit(h){
-    editHabitRef = h;
-    $('#editName').value = h.name||'';
-    $('#editEmoji').value = h.emoji||'';
-    $('#editColor').value = h.color||'#7ee787';
-    $('#editStart').value = String(h.incentive||0);
+  function openEdit(type, obj){
+    editType=type; editObj=obj;
+    $('#editTitle').textContent = type==='habit' ? 'Edit Habit' : 'Edit Vice';
+    $('#editName').value = obj.name||'';
+    $('#editEmoji').value = obj.emoji||'';
+    $('#editColor').value = obj.color|| (type==='habit'?'#7ee787':'#ff6b6b');
+    const more = $('#editMore'); more.innerHTML='';
+    if(type==='habit'){
+      more.innerHTML = `
+        <input id="editIncentive" class="number" type="number" min="0" step="1" placeholder="Current reward $" value="${obj.incentive||0}" />
+        <input id="editStep" class="number" type="number" min="1" step="1" placeholder="Step ±$" value="${obj.step||state.step}" />
+        <input id="editPts" class="number" type="number" step="1" placeholder="Points per completion" value="${obj.points||10}" />
+      `;
+    } else {
+      more.innerHTML = `
+        <input id="editPenaltyCash" class="number" type="number" step="1" placeholder="Cash penalty $" value="${obj.cashPenalty||0}" />
+        <input id="editPenaltyPts" class="number" type="number" step="1" placeholder="Points penalty" value="${obj.pointsPenalty||10}" />
+      `;
+    }
     editModal.showModal();
   }
   editModal.addEventListener('close', ()=>{
-    if(editModal.returnValue==='submit' && editHabitRef){
-      editHabitRef.name = String($('#editName').value||editHabitRef.name);
-      editHabitRef.emoji = String($('#editEmoji').value||'').slice(0,2);
-      editHabitRef.color = $('#editColor').value || editHabitRef.color;
-      const val = Number($('#editStart').value);
-      if(isFinite(val) && val>=0) editHabitRef.incentive = round2(val);
+    if(editModal.returnValue==='submit' && editObj){
+      editObj.name = String($('#editName').value||editObj.name);
+      editObj.emoji = String($('#editEmoji').value||'').slice(0,2);
+      editObj.color = $('#editColor').value || editObj.color;
+      if(editType==='habit'){
+        const n1=Number($('#editIncentive').value); if(isFinite(n1)&&n1>=0) editObj.incentive=round2(n1);
+        const n2=Number($('#editStep').value); if(isFinite(n2)&&n2>=1) editObj.step=Math.round(n2);
+        const n3=Number($('#editPts').value); if(isFinite(n3)) editObj.points=Math.round(n3);
+      }else{
+        const p1=Number($('#editPenaltyCash').value); if(isFinite(p1)) editObj.cashPenalty=Math.round(p1);
+        const p2=Number($('#editPenaltyPts').value); if(isFinite(p2)) editObj.pointsPenalty=Math.round(p2);
+      }
       save(); render();
     }
-    editHabitRef=null;
+    editObj=null;
   });
 
-  // ---------- Wire-up global ----------
-  $('#addHabitBtn').addEventListener('click', ()=>{
-    addHabit($('#newHabitName').value, $('#newHabitStart').value, $('#newHabitEmoji').value, $('#newHabitColor').value);
-  });
-  ['#newHabitName','#newHabitStart','#newHabitEmoji'].forEach(sel=>{
-    $(sel).addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('#addHabitBtn').click(); }});
-  });
+  // ---------- Add Habit / Vice ----------
+  $('#addHabitBtn').onclick = ()=>{
+    const name=$('#newHabitName').value.trim(); if(!name){ alert('Enter a habit name'); return; }
+    const emoji=$('#newHabitEmoji').value.trim().slice(0,2);
+    const color=$('#newHabitColor').value || '#7ee787';
+    let start=Number($('#newHabitStart').value); if(!isFinite(start)||start<0) start=20;
+    let pts=Number($('#newHabitPts').value); if(!isFinite(pts)) pts=10;
+    state.habits.push({ id:cid(), name, emoji, color, incentive:round2(start), step:state.step, points:Math.round(pts) });
+    $('#newHabitName').value=''; $('#newHabitEmoji').value=''; $('#newHabitStart').value=''; $('#newHabitPts').value='';
+    save(); render();
+  };
+  $('#addViceBtn').onclick = ()=>{
+    const name=$('#newViceName').value.trim(); if(!name){ alert('Enter a vice name'); return; }
+    const emoji=$('#newViceEmoji').value.trim().slice(0,2);
+    const color=$('#newViceColor').value || '#ff6b6b';
+    let cash=Number($('#newViceCash').value); if(!isFinite(cash)) cash=0;
+    let pts=Number($('#newVicePts').value); if(!isFinite(pts)) pts=10;
+    state.vices.push({ id:cid(), name, emoji, color, cashPenalty:Math.round(cash), pointsPenalty:Math.round(pts) });
+    $('#newViceName').value=''; $('#newViceEmoji').value=''; $('#newViceCash').value=''; $('#newVicePts').value='';
+    save(); render();
+  };
 
+  // ---------- Spend / Settings ----------
   const spendModal = $('#spendModal');
-  $('#spendBtn').addEventListener('click', ()=>spendModal.showModal());
+  $('#spendBtn').onclick = ()=>spendModal.showModal();
   spendModal.addEventListener('close', ()=>{
     if(spendModal.returnValue==='submit'){
       spend($('#spendAmt').value, $('#spendNote').value);
@@ -580,13 +527,8 @@
     <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
       <h3>Settings</h3>
       <div class="row" style="gap:10px">
-        <label class="pill">Global step (±):</label>
-        <input id="stepInput" class="number" type="number" inputmode="decimal" min="1" step="1" placeholder="$ step" style="max-width:130px" />
-      </div>
-      <div class="section-title">Goal</div>
-      <div class="row" style="gap:8px">
-        <input id="goalTitle" class="input" placeholder="Goal name" />
-        <input id="goalPrice" class="number" type="number" inputmode="decimal" min="1" step="1" placeholder="Price $" style="max-width:140px" />
+        <label class="tag">Default Step (±)</label>
+        <input id="stepInput" class="number" type="number" min="1" step="1" />
       </div>
       <div class="row" style="justify-content:flex-end; margin-top:10px">
         <button class="btn" value="cancel">Close</button>
@@ -594,33 +536,112 @@
       </div>
     </form>`;
   document.body.appendChild(settingsModal);
-
-  $('#settingsBtn').addEventListener('click', ()=>{
+  $('#settingsBtn').onclick = ()=>{
     settingsModal.querySelector('#stepInput').value = state.step;
-    settingsModal.querySelector('#goalTitle').value = state.goal?.name || '';
-    settingsModal.querySelector('#goalPrice').value = state.goal?.price || '';
     settingsModal.showModal();
-  });
+  };
   settingsModal.addEventListener('close', ()=>{
     if(settingsModal.returnValue==='submit'){
-      const n = Math.max(1, Math.floor(Number(settingsModal.querySelector('#stepInput').value)||state.step||5));
-      state.step = n;
-      const gName = String(settingsModal.querySelector('#goalTitle').value||'').trim();
-      const gPrice = Math.max(1, Math.floor(Number(settingsModal.querySelector('#goalPrice').value)|| (state.goal?.price || 150)));
-      if(!state.goal) state.goal = { name:gName||"Treat yo' self", price:gPrice, allocated:0 };
-      else { state.goal.name = gName||state.goal.name; state.goal.price = gPrice; state.goal.allocated = Math.min(state.goal.price, state.goal.allocated||0); }
-      save(); render();
+      const n=Math.max(1, Math.floor(Number(settingsModal.querySelector('#stepInput').value)||state.step||5));
+      state.step=n; save(); render();
     }
   });
 
-  function tickHeader(){
-    $('#todayText').textContent = niceDate(new Date());
-    requestAnimationFrame(tickHeader);
+  // ---------- History / Graph ----------
+  function renderHistory(){
+    const k=todayKey();
+    const box = $('#todayHistory');
+    const todays = state.events.filter(e=>e.date===k).slice(-20);
+    box.innerHTML = todays.length? todays.map(e=>{
+      if(e.type==='habitDone'){
+        const h = state.habits.find(x=>x.id===e.habitId);
+        return `<div class="row split" style="margin:6px 0"><div>✅ ${escapeHTML(h?.name||'Habit')}</div><div>+${fmt.format(e.cashDelta)} · +${e.pointsDelta}pts</div></div>`;
+      } else if(e.type==='habitMiss'){
+        const h = state.habits.find(x=>x.id===e.habitId);
+        return `<div class="row split" style="margin:6px 0"><div>✖️ Missed ${escapeHTML(h?.name||'Habit')}</div><div>+${fmt.format(0)} · −${Math.abs(e.pointsDelta)}pts</div></div>`;
+      } else if(e.type==='vice'){
+        const v = state.vices.find(x=>x.id===e.viceId);
+        const cash = e.cashDelta? `${e.cashDelta<0?'−':''}${fmt.format(Math.abs(e.cashDelta))}` : '$0.00';
+        return `<div class="row split" style="margin:6px 0"><div>⬇️ ${escapeHTML(v?.name||'Vice')}</div><div>${cash} · −${Math.abs(e.pointsDelta)}pts</div></div>`;
+      } else {
+        return `<div class="row split" style="margin:6px 0"><div>🛍️ ${escapeHTML(e.note||'Spent')}</div><div>−${fmt.format(Math.abs(e.cashDelta||0))}</div></div>`;
+      }
+    }).join('') : `<div class="sub">No entries yet today.</div>`;
   }
-  tickHeader();
-  render();
 
+  function dayPoints(dateKey){
+    return state.events.filter(e=>e.date===dateKey).reduce((s,e)=>s+(e.pointsDelta||0),0);
+  }
+  function drawDailyGraph(){
+    const c = $('#dailyGraph'), ctx=c.getContext('2d');
+    const W=c.width, H=c.height;
+    ctx.clearRect(0,0,W,H);
+    const days=[];
+    for(let i=13;i>=0;i--){
+      const d=new Date(); d.setDate(d.getDate()-i); const k=todayKey(d);
+      days.push({k, val: dayPoints(k)});
+    }
+    const maxAbs = Math.max(10, ...days.map(d=>Math.abs(d.val)));
+    const barW = W / days.length - 6;
+    ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.fillStyle='#aab';
+    days.forEach((d, idx)=>{
+      const x = idx*(W/days.length)+3;
+      const mid=H*0.62;
+      const h = (Math.abs(d.val)/maxAbs)*(H*0.52);
+      const y = d.val>=0 ? mid - h : mid;
+      ctx.fillStyle = d.val>=0 ? getComputedStyle(document.documentElement).getPropertyValue('--green') || '#20c997'
+                               : getComputedStyle(document.documentElement).getPropertyValue('--red')   || '#ff6b6b';
+      ctx.fillRect(x, y, barW, Math.max(2, h));
+      // today marker
+      if(idx===days.length-1){
+        ctx.fillStyle='#e9ecf1'; ctx.fillRect(x, mid-1, barW, 2);
+      } else {
+        ctx.fillStyle='#4a4f65'; ctx.fillRect(x, mid, barW, 1);
+      }
+    });
+  }
+
+  // Mini 14-day dots per habit
+  function miniDots(habitId){
+    const dots=[];
+    for(let i=13;i>=0;i--){
+      const d=new Date(); d.setDate(d.getDate()-i); const k=todayKey(d);
+      const ev = state.events.filter(e=>e.date===k && (e.habitId===habitId) );
+      const plus = ev.some(e=>e.type==='habitDone');
+      const minusOnly = !plus && ev.some(e=>e.type==='habitMiss');
+      dots.push(`<span class="dot ${plus?'plus':(minusOnly?'minus':'')} ${i===0?'today':''}" title="${k}"></span>`);
+    }
+    return dots;
+  }
+
+  // ---------- Render ----------
+  function render(){
+    $('#cashTotal').textContent = fmt.format(state.cashTotal);
+    $('#pointsTotal').textContent = String(state.pointsTotal);
+    $('#todayText').textContent = niceDate(new Date());
+    $('#stepDisplay').textContent = `$${state.step}`;
+
+    // Habits
+    const hList = $('#habitList'); hList.innerHTML='';
+    state.habits.forEach(h=> hList.appendChild(habitRow(h)));
+
+    // Vices
+    const vList = $('#viceList'); vList.innerHTML='';
+    state.vices.forEach(v=> vList.appendChild(viceRow(v)));
+
+    // History + graph
+    renderHistory();
+    drawDailyGraph();
+  }
+
+  // ---------- Spend ----------
+  $('#spendModal').addEventListener('close', ()=>{
+    // handled earlier
+  });
+
+  // ---------- Init ----------
+  render();
 })();
 </script>
 </body>
-</html>
+</html
