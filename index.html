@@ -6,7 +6,7 @@
   <title>Now Mode</title>
   <meta name="theme-color" content="#111" />
 
-  <!-- Chart.js 2.x (matches your app.js) -->
+  <!-- Chart.js 2.x -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
 
   <style>
@@ -96,7 +96,7 @@
     .canvas-wrap{background:#0e0e0e;border:1px solid var(--border);border-radius:16px;padding:10px}
     canvas{display:block;width:100%}
 
-    /* ===== Bottom sheet (kept for app.js wiring; no glow) ===== */
+    /* ===== Bottom sheet (selector) ===== */
     .sheet{
       position:fixed;left:0;right:0;bottom:-100%;
       background:#131317;border-top:1px solid var(--border);
@@ -113,7 +113,6 @@
     }
     .tab.active{background:#15151a}
 
-    /* Grid of items; each item now has its own class for overrides */
     .list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     .item{
       border:1px solid var(--border);border-radius:12px;padding:10px;cursor:pointer;background:#0f0f12;
@@ -127,26 +126,9 @@
     .sheet .footer{display:flex;gap:10px;margin-top:12px}
     .btn.secondary{background:#121214}
 
-    /* ===== Per-item overrides (YOUR CUSTOMIZATION ZONE) ===== */
-    /* Example: tweak a single habit/vice without touching others */
-    .item.habit.meditation{ color:#00e676; font-weight:700; }
-    .item.habit.learning  { color:#00b0ff; }
-    .item.habit.journal   { color:#ffd54f; }
-    .item.habit.fitness   { color:#ff8f00; }
-    .item.habit.music     { color:#b388ff; }
-    .item.habit.cooking   { color:#a5d6a7; }
-    .item.habit.sleep8    { color:#64ffda; }
-
-    .item.vice.weed        { color:#9ccc65; }
-    .item.vice.alcohol     { color:#ff7043; }
-    .item.vice.nicotine    { color:#ff5252; }
-    .item.vice.doomscroll  { color:#90caf9; }
-    .item.vice.wank        { color:#f48fb1; }
-    .item.vice.sleepbad    { color:#b0bec5; }
-
-    /* You can also change size per item, e.g.: */
-    /* .item.habit.fitness .name { font-size:15px } */
-
+    /* ===== Manage (CRUD) Sheet ===== */
+    .manage .list .item button{padding:6px 10px;border-radius:8px}
+    .manage h3{font-size:14px;margin:6px 0}
     @media (max-width:560px){ .list{grid-template-columns:1fr} }
   </style>
 </head>
@@ -167,6 +149,7 @@
           <button class="btn danger"  id="btnDown" aria-label="Add vice (open selector)">▼ Down</button>
           <button class="btn" id="btnUndo" aria-label="Undo last action">⟲ Undo</button>
           <button class="btn" id="btnExport" aria-label="Export data">⇩ Export</button>
+          <button class="btn" id="btnManage" aria-label="Manage items">⚙︎ Manage</button>
         </div>
 
         <div class="row">
@@ -215,51 +198,9 @@
       <div class="tab" id="tabVices" role="button" aria-controls="listVices">Vices</div>
     </div>
 
-    <!-- Each item gets unique class hooks for easy styling -->
-    <div class="list" id="listHabits">
-      <div class="item habit meditation" data-type="habit" data-name="Meditation" data-points="1" data-cash="1">
-        <span class="name">Meditation</span><span class="meta">+1 pt • +$1</span>
-      </div>
-      <div class="item habit learning" data-type="habit" data-name="Learning" data-points="1" data-cash="1">
-        <span class="name">Learning</span><span class="meta">+1 pt • +$1</span>
-      </div>
-      <div class="item habit journal" data-type="habit" data-name="Journal" data-points="1" data-cash="1">
-        <span class="name">Journal</span><span class="meta">+1 pt • +$1</span>
-      </div>
-      <div class="item habit fitness" data-type="habit" data-name="Fitness" data-points="2" data-cash="2">
-        <span class="name">Fitness</span><span class="meta">+2 pt • +$2</span>
-      </div>
-      <div class="item habit music" data-type="habit" data-name="Music" data-points="1" data-cash="1">
-        <span class="name">Music</span><span class="meta">+1 pt • +$1</span>
-      </div>
-      <div class="item habit cooking" data-type="habit" data-name="Cooking" data-points="1" data-cash="1">
-        <span class="name">Cooking</span><span class="meta">+1 pt • +$1</span>
-      </div>
-      <div class="item habit sleep8" data-type="habit" data-name="Sleep ≥ 8h" data-points="2" data-cash="2">
-        <span class="name">Sleep ≥ 8h</span><span class="meta">+2 pt • +$2</span>
-      </div>
-    </div>
-
-    <div class="list" id="listVices" style="display:none">
-      <div class="item vice weed" data-type="vice" data-name="Weed" data-points="-1" data-cash="-1">
-        <span class="name">Weed</span><span class="meta">-1 pt • -$1</span>
-      </div>
-      <div class="item vice alcohol" data-type="vice" data-name="Alcohol" data-points="-2" data-cash="-2">
-        <span class="name">Alcohol</span><span class="meta">-2 pt • -$2</span>
-      </div>
-      <div class="item vice nicotine" data-type="vice" data-name="Nicotine" data-points="-2" data-cash="-2">
-        <span class="name">Nicotine</span><span class="meta">-2 pt • -$2</span>
-      </div>
-      <div class="item vice doomscroll" data-type="vice" data-name="Doomscrolling" data-points="-1" data-cash="-1">
-        <span class="name">Doomscrolling</span><span class="meta">-1 pt • -$1</span>
-      </div>
-      <div class="item vice wank" data-type="vice" data-name="Wank" data-points="-1" data-cash="-1">
-        <span class="name">Wank</span><span class="meta">-1 pt • -$1</span>
-      </div>
-      <div class="item vice sleepbad" data-type="vice" data-name="Sleep < 6h" data-points="-2" data-cash="-2">
-        <span class="name">Sleep &lt; 6h</span><span class="meta">-2 pt • -$2</span>
-      </div>
-    </div>
+    <!-- Populated dynamically from catalog -->
+    <div class="list" id="listHabits"></div>
+    <div class="list" id="listVices" style="display:none"></div>
 
     <div class="footer">
       <button class="btn secondary" id="sheetCancel">Cancel</button>
@@ -267,10 +208,51 @@
     </div>
   </div>
 
-  <!-- Your app logic -->
+  <!-- ===== Manage (CRUD) Sheet ===== -->
+  <div class="sheet manage" id="manageSheet" aria-hidden="true">
+    <div class="grab"></div>
+    <h2>Manage Habits & Vices</h2>
+
+    <form id="itemForm" class="row" style="margin-top:8px">
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:160px">
+        <label for="itemName" style="font-size:12px;color:#9aa0a6">Name</label>
+        <input id="itemName" type="text" placeholder="e.g., Cold Shower" required
+               style="background:#121212;border:1px solid #242424;border-radius:10px;color:#fff;padding:10px">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:120px">
+        <label for="itemType" style="font-size:12px;color:#9aa0a6">Type</label>
+        <select id="itemType" required
+                style="background:#121212;border:1px solid #242424;border-radius:10px;color:#fff;padding:10px">
+          <option value="habit">Habit</option>
+          <option value="vice">Vice</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:120px">
+        <label for="itemPoints" style="font-size:12px;color:#9aa0a6">Points (±)</label>
+        <input id="itemPoints" type="number" step="1" value="1" required
+               style="background:#121212;border:1px solid #242424;border-radius:10px;color:#fff;padding:10px">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:120px">
+        <label for="itemCash" style="font-size:12px;color:#9aa0a6">Cash (±)</label>
+        <input id="itemCash" type="number" step="1" value="1" required
+               style="background:#121212;border:1px solid #242424;border-radius:10px;color:#fff;padding:10px">
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:10px">
+        <button class="btn primary" type="submit" id="btnSaveItem">Save</button>
+        <button class="btn" type="button" id="btnNewItem">New</button>
+        <button class="btn secondary" type="button" id="btnCloseManage">Close</button>
+      </div>
+    </form>
+
+    <div style="height:10px"></div>
+    <h3>Items</h3>
+    <div id="catalogList" class="list"></div>
+  </div>
+
+  <!-- Logic -->
   <script src="app.js"></script>
 
-  <!-- Minimal sheet wiring (kept same so your app.js continues to work) -->
+  <!-- Minimal wiring for selector sheet (kept small; app.js handles data) -->
   <script>
     const sheet = document.getElementById('selectorSheet');
     const tabH  = document.getElementById('tabHabits');
@@ -305,10 +287,10 @@
     document.getElementById('sheetCancel').addEventListener('click', closeSheet);
     document.getElementById('sheetApply').addEventListener('click', closeSheet);
 
-    // expose selected choice for app.js to read (unchanged)
+    // Expose selected choice for app.js to read
     document.getElementById('listHabits').addEventListener('click', e=>{
       const el = e.target.closest('.item'); if(!el) return;
-      window.selectedChoice = el.dataset;
+      window.selectedChoice = el.dataset; // {type,name,points,cash}
     });
     document.getElementById('listVices').addEventListener('click', e=>{
       const el = e.target.closest('.item'); if(!el) return;
