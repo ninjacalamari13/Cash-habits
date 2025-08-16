@@ -1,835 +1,320 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>Cash Habits</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Now Mode</title>
+  <meta name="theme-color" content="#111" />
 
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Cash Habits" />
+  <!-- Chart.js 2.x -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
 
-<style>
-  :root{
-    --bg:#0f1115; --card:#171a21; --ink:#e9ecf1; --muted:#9aa3b2; --ring:#2a2f3a; --shadow:#0006;
-    --good:#1b8f63; --good-d:#117d57; --bad:#b0232c; --bad-d:#7f1820;
-    --green:#20c997; --red:#ff6b6b;
-  }
-  html,body{height:100%}
-  body{
-    margin:0; background:var(--bg); color:var(--ink);
-    font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
-    -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
-  }
-  .app{ max-width:900px; margin:0 auto; padding: env(safe-area-inset-top) 14px 18px }
-  .row{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
-  .split{justify-content:space-between}
-  .center{justify-content:center}
-  .grow{flex:1}
-  .sub{color:var(--muted); font-size:12px}
-  .balance{font-weight:800; font-size:26px}
-  .big{font-weight:800; font-size:22px}
+  <style>
+    :root{
+      --bg:#0f0f10; --panel:#161618; --text:#eee; --muted:#9aa0a6;
+      --accent:#78ffd6;
 
-  .topbar{
-    position:sticky; top:0; z-index:10; backdrop-filter: blur(10px);
-    background: linear-gradient(180deg, rgba(15,17,21,.92), rgba(15,17,21,.76) 60%, transparent);
-    padding: 10px 0 12px; border-bottom:1px solid #141824;
-  }
+      /* metrics */
+      --sleep:#3aa3ff;   /* blue */
+      --mood:#ffd44d;    /* yellow */
+      --energy:#ffa04d;  /* orange */
+      --focus:#ffffff;   /* white */
 
-  .card{
-    background:linear-gradient(180deg, var(--card), #141821);
-    border:1.5px solid var(--ring); border-radius:16px; padding:14px;
-    box-shadow: 0 10px 20px var(--shadow); margin:12px 0;
-  }
-  .card h3{margin:0 0 6px; font-size:18px}
-  .input, .number, select, input[type="range"]{
-    width:100%; box-sizing:border-box; padding:12px 12px; color:var(--ink);
-    background:#0e121b; border:1px solid var(--ring); border-radius:12px; outline:none;
-  }
-  input[type="range"]{ padding:10px 8px; height:42px; }
+      /* stacks */
+      --habit:#00ff64;   /* neon green */
+      --vice:#ff3c3c;    /* neon red */
+    }
 
-  .btn{
-    appearance:none; -webkit-appearance:none; cursor:pointer;
-    border:1px solid var(--ring); background:transparent; color:var(--ink);
-    padding:10px 14px; border-radius:12px; font-weight:700; transition:.15s transform ease;
-  }
-  .btn:active{ transform: translateY(1px) }
-  .btn.small{ padding:6px 8px; border-radius:10px; font-size:12px }
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    }
 
-  /* Tally buttons */
-  .tallyBtn{
-    appearance:none; -webkit-appearance:none; cursor:pointer; user-select:none;
-    border:2px solid transparent; color:#fff; font-size:22px; font-weight:800;
-    display:inline-grid; place-items:center; min-width:64px; min-height:56px; border-radius:14px;
-    box-shadow: 0 6px 18px var(--shadow);
-  }
-  .tallyUp{ background:linear-gradient(180deg, var(--good), var(--good-d)) }
-  .tallyDown{ background:linear-gradient(180deg, var(--bad), var(--bad-d)) }
+    .wrap{max-width:980px;margin:18px auto;padding:16px}
+    .card{
+      background:var(--panel);
+      border:1px solid #212124;
+      border-radius:16px;
+      padding:16px;
+      box-shadow:0 12px 34px rgba(0,0,0,.35);
+    }
+    h1{font-size:18px;margin:0 0 10px 0}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 
-  .tag{
-    display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px;
-    background:#0f1320; border:1px solid #1a2030; color:#cfd6e6; font-size:12px; font-weight:700;
-  }
-  .emoji{font-size:18px}
+    /* ===== Tally Header ===== */
+    .tally{
+      display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+    }
+    .score{
+      min-width:240px; flex:1; background:#101013; border:1px solid #1e1e22; border-radius:14px; padding:14px;
+      position:relative; overflow:hidden;
+      box-shadow: inset 0 0 30px rgba(0,0,0,.35);
+    }
+    .score .label{font-size:12px;color:var(--muted);margin-bottom:6px}
+    .score .value{
+      font-size:32px; font-weight:700; letter-spacing:.5px;
+      text-shadow: 0 0 10px rgba(120,255,214,.6), 0 0 24px rgba(120,255,214,.35);
+    }
+    .bar{
+      margin-top:10px; height:12px; border-radius:999px; background:#1a1a1d; position:relative;
+      box-shadow: inset 0 0 10px rgba(0,0,0,.5);
+    }
+    .bar > .fill{
+      width:50%; height:100%; border-radius:inherit;
+      background: linear-gradient(90deg, #00ffa3, #00d2ff);
+      box-shadow: 0 0 8px #00ffa3, 0 0 18px #00ffa3, 0 0 28px #00d2ff;
+      transition: width .25s ease;
+    }
 
-  /* Streak mini chart dots (per habit) */
-  .streak{ display:flex; gap:4px; flex-wrap:wrap; margin-top:6px }
-  .dot{ width:12px; height:12px; border-radius:4px; border:1px solid #2a3142; background:#0f1320 }
-  .dot.plus{ background:#1b8f63 }
-  .dot.minus{ background:#7f1820 }
-  .dot.today{ outline:2px solid #e9ecf1; outline-offset:1px }
+    .actions{display:flex;gap:10px;align-items:center}
+    .btn{
+      appearance:none; -webkit-appearance:none; cursor:pointer;
+      border:1px solid #232327; background:#121214; color:#fff;
+      padding:10px 14px; border-radius:12px; font-weight:600;
+      box-shadow:0 6px 18px rgba(0,0,0,.35);
+      transition: transform .05s ease;
+    }
+    .btn:active{ transform: translateY(1px) }
+    .btn.glow{
+      border-color:#1f4136;
+      background: radial-gradient(120% 120% at 10% 0%, rgba(0,255,163,.15), transparent 60%),
+                  #121214;
+      box-shadow:
+        0 0 10px rgba(0,255,163,.45),
+        0 0 24px rgba(0,210,255,.25),
+        inset 0 0 12px rgba(0,255,163,.12);
+    }
+    .btn.red{
+      border-color:#3a2020;
+      background: radial-gradient(120% 120% at 10% 0%, rgba(255,60,60,.15), transparent 60%),
+                  #121214;
+      box-shadow:
+        0 0 10px rgba(255,60,60,.45),
+        0 0 24px rgba(255,60,60,.25),
+        inset 0 0 12px rgba(255,60,60,.12);
+    }
 
-  /* Daily points bar graph */
-  .graphWrap{ width:100%; height:140px; }
-  #dailyGraph{ width:100%; height:140px; display:block; }
+    .chip{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 12px; border-radius:12px; background:#101012; border:1px solid #232327;
+      font-size:13px; color:#fff;
+    }
+    .chip .dot{width:10px;height:10px;border-radius:50%}
+    .chip.habit .dot{ background: var(--habit); box-shadow:0 0 8px var(--habit), 0 0 18px var(--habit) }
+    .chip.vice  .dot{ background: var(--vice);  box-shadow:0 0 8px var(--vice),  0 0 18px var(--vice) }
 
-  /* Layout helpers */
-  .spacer{height: env(safe-area-inset-bottom)}
-</style>
+    /* ===== Sliders ===== */
+    .slider{flex:1;min-width:220px;display:flex;flex-direction:column;gap:6px}
+    .slider label{font-size:12px;color:var(--muted)}
+    .slider input[type=range]{ -webkit-appearance:none; width:100%; height:10px; background:#1f1f23;border-radius:8px; outline:none; }
+    .slider input[type=range]::-webkit-slider-thumb{
+      -webkit-appearance:none; width:22px;height:22px;border-radius:50%;
+      background: currentColor; border:2px solid #fff;
+      box-shadow: 0 0 8px currentColor, 0 0 18px currentColor, 0 0 28px currentColor;
+      cursor:pointer; margin-top:-6px;
+    }
+    .slider input[type=range]::-moz-range-thumb{
+      width:22px;height:22px;border-radius:50%; background: currentColor; border:2px solid #fff;
+      box-shadow: 0 0 8px currentColor, 0 0 18px currentColor, 0 0 28px currentColor;
+      cursor:pointer;
+    }
+    .slider.sleep  input{ color: var(--sleep); }
+    .slider.mood   input{ color: var(--mood); }
+    .slider.energy input{ color: var(--energy); }
+    .slider.focus  input{ color: var(--focus); }
+
+    /* ===== Canvas ===== */
+    .canvas-wrap{
+      background:#0c0c10;border:1px solid #202026;border-radius:16px;padding:10px;
+      box-shadow: inset 0 0 30px rgba(0,0,0,.35);
+    }
+    canvas{ display:block; width:100% }
+
+    /* ===== Modal (bottom sheet) ===== */
+    .sheet{
+      position:fixed; left:0; right:0; bottom:-100%;
+      background:#131317; border-top-left-radius:16px;border-top-right-radius:16px;
+      border-top:1px solid #24242a; padding:14px 16px 20px; z-index:50;
+      box-shadow:0 -20px 40px rgba(0,0,0,.55);
+      transition: bottom .25s ease;
+    }
+    .sheet.open{ bottom:0 }
+    .sheet .grab{ width:44px;height:4px;border-radius:999px;background:#2a2a2f;margin:4px auto 12px}
+    .sheet h2{ font-size:16px; margin:0 0 8px 0 }
+    .tabbar{ display:flex; gap:8px; margin-bottom:8px }
+    .tab{
+      flex:1; text-align:center; padding:8px 10px; border-radius:10px; cursor:pointer;
+      border:1px solid #232327; background:#0f0f12; font-weight:600;
+    }
+    .tab.active{ background:#131318; box-shadow: inset 0 0 18px rgba(0,0,0,.5) }
+
+    .list{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .item{
+      border:1px solid #232327; border-radius:12px; padding:10px; cursor:pointer;
+      background:#0f0f12;
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+      transition: transform .05s ease;
+    }
+    .item:active{ transform: translateY(1px) }
+    .item .name{ font-size:14px }
+    .item .meta{ font-size:12px; color:var(--muted) }
+    .item.habit{ color: var(--habit) }
+    .item.vice{  color: var(--vice)  }
+    .item.habit .name, .item.vice .name{
+      text-shadow:0 0 10px currentColor, 0 0 22px currentColor;
+    }
+
+    .sheet .footer{ display:flex; gap:10px; margin-top:12px }
+    .btn.secondary{ background:#121214; border-color:#2a2a2f }
+    .btn.primary{ background:#0f1311; border-color:#1f4136 }
+
+    /* Utility */
+    .spacer{height:12px}
+    @media (max-width:560px){ .list{ grid-template-columns:1fr } }
+  </style>
 </head>
 <body>
+  <div class="wrap">
 
-<div class="app">
-  <!-- Header / Tally -->
-  <div class="topbar">
-    <div class="row split">
-      <div>
-        <div class="sub">Cash Available</div>
-        <div class="balance" id="cashTotal">$0.00</div>
-      </div>
-      <div>
-        <div class="sub">Points</div>
-        <div class="balance" id="pointsTotal">0</div>
-      </div>
-      <div class="row" style="gap:8px">
-        <button class="btn" id="undoBtn" title="Undo last action">↩️ Undo</button>
-        <button class="btn" id="exportJsonBtn" title="Export JSON">⬇️ JSON</button>
-        <button class="btn" id="exportCsvBtn" title="Export CSV">⬇️ CSV</button>
-        <button class="btn" id="settingsBtn">⚙️</button>
-      </div>
-    </div>
+    <!-- ===== Tally / Controls ===== -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="tally">
+        <div class="score">
+          <div class="label">Dopamine / Mindfulness Tally</div>
+          <div class="value" id="tallyValue">0</div>
+          <div class="bar"><div class="fill" id="tallyFill" style="width:50%"></div></div>
+        </div>
 
-    <div class="row center" style="gap:14px; margin-top:10px">
-      <button class="tallyBtn tallyUp" id="tallyUp">⬆️</button>
-      <div class="tag">Today: <span id="todayText">—</span> · Step ±<span id="stepDisplay">$5</span></div>
-      <button class="tallyBtn tallyDown" id="tallyDown">⬇️</button>
-    </div>
-  </div>
+        <div class="actions">
+          <button class="btn glow" id="btnUp"   aria-label="Add habit (open selector)">▲ Up</button>
+          <button class="btn red"  id="btnDown" aria-label="Add vice (open selector)">▼ Down</button>
+          <button class="btn" id="btnUndo" aria-label="Undo last action">⟲ Undo</button>
+          <button class="btn" id="btnExport" aria-label="Export data">⇩ Export</button>
+        </div>
 
-  <!-- Graph -->
-  <div class="card">
-    <h3>Daily Points</h3>
-    <div class="graphWrap"><canvas id="dailyGraph" width="800" height="140"></canvas></div>
-    <div class="sub">Green = net positive • Red = net negative</div>
-  </div>
-
-  <!-- Quick Mood / Focus / Energy -->
-  <div class="card">
-    <h3>How do you feel today?</h3>
-    <div class="row" style="gap:10px">
-      <div class="grow">
-        <div class="sub">Mood: <span id="moodVal">0</span>/10</div>
-        <input id="moodRange" type="range" min="0" max="10" step="1" value="0" />
-      </div>
-      <div class="grow">
-        <div class="sub">Focus: <span id="focusVal">0</span>/10</div>
-        <input id="focusRange" type="range" min="0" max="10" step="1" value="0" />
-      </div>
-      <div class="grow">
-        <div class="sub">Energy: <span id="energyVal">0</span>/10</div>
-        <input id="energyRange" type="range" min="0" max="10" step="1" value="0" />
-      </div>
-    </div>
-  </div>
-
-  <!-- Sleep -->
-  <div class="card" id="sleepCard">
-    <h3>Sleep (goal 8h)</h3>
-    <div class="row" style="gap:10px">
-      <div class="grow">
-        <div class="sub">Hours: <span id="sleepVal">0</span>h</div>
-        <input id="sleepRange" type="range" min="0" max="12" step="0.25" value="0" />
-      </div>
-      <div class="row" style="gap:8px">
-        <span class="tag" id="sleepNext">$0.00 next</span>
-        <span class="tag">±$<span id="sleepStep">5</span></span>
-        <span class="tag">+<span id="sleepPts">10</span> pts</span>
-      </div>
-    </div>
-    <div class="sub" style="margin-top:6px">Slide to log/adjust today’s sleep. ≥ 8h grants reward & points; < 8h gives a points penalty and raises tomorrow’s incentive.</div>
-  </div>
-
-  <!-- Habits -->
-  <div class="card">
-    <h3>Habits</h3>
-    <div id="habitList"></div>
-    <div class="row" style="gap:8px; margin-top:10px">
-      <input id="newHabitName" class="input" placeholder="Habit name" />
-      <input id="newHabitEmoji" class="input" placeholder="Emoji (e.g., 🧘)" style="max-width:110px" />
-      <input id="newHabitColor" type="color" class="input" value="#7ee787" style="max-width:110px; padding:6px 8px; height:44px" />
-    </div>
-    <div class="row" style="gap:8px; margin-top:6px">
-      <input id="newHabitStart" type="number" class="number" min="0" step="1" placeholder="Start reward $ (default 20)" />
-      <input id="newHabitPts" type="number" class="number" step="1" placeholder="Points per completion (default 10)" />
-      <button class="btn" id="addHabitBtn">Add Habit</button>
-    </div>
-  </div>
-
-  <!-- Vices -->
-  <div class="card">
-    <h3>Vices</h3>
-    <div id="viceList"></div>
-    <div class="row" style="gap:8px; margin-top:10px">
-      <input id="newViceName" class="input" placeholder="Vice name" />
-      <input id="newViceEmoji" class="input" placeholder="Emoji (e.g., 📱)" style="max-width:110px" />
-      <input id="newViceColor" type="color" class="input" value="#ff6b6b" style="max-width:110px; padding:6px 8px; height:44px" />
-    </div>
-    <div class="row" style="gap:8px; margin-top:6px">
-      <input id="newViceCash" type="number" class="number" step="1" placeholder="Cash penalty $ (default 0)" />
-      <input id="newVicePts" type="number" class="number" step="1" placeholder="Points penalty (default 10)" />
-      <button class="btn" id="addViceBtn">Add Vice</button>
-    </div>
-  </div>
-
-  <!-- Today -->
-  <div class="card">
-    <h3>Today</h3>
-    <div id="todayHistory"></div>
-  </div>
-
-  <div class="spacer"></div>
-</div>
-
-<!-- Spend Modal -->
-<dialog id="spendModal">
-  <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
-    <h3>Spend Cash</h3>
-    <div class="row"><input id="spendAmt" class="number" type="number" min="0" step="1" placeholder="Amount $" /></div>
-    <div class="row"><input id="spendNote" class="input" placeholder="What did you buy? (optional)" /></div>
-    <div class="row" style="justify-content:flex-end">
-      <button class="btn" value="cancel">Cancel</button>
-      <button class="btn" value="submit">Spend</button>
-    </div>
-  </form>
-</dialog>
-
-<!-- Tally Up Modal (choose habit) -->
-<dialog id="upModal">
-  <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
-    <h3>What did you do?</h3>
-    <div id="upList"></div>
-    <div class="row" style="justify-content:flex-end; margin-top:10px">
-      <button class="btn" value="cancel">Close</button>
-    </div>
-  </form>
-</dialog>
-
-<!-- Tally Down Modal -->
-<dialog id="downModal">
-  <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
-    <h3>Log a miss or a vice</h3>
-    <div class="row" style="gap:8px">
-      <select id="downMode">
-        <option value="habit">Missed a habit</option>
-        <option value="vice">Did a vice</option>
-      </select>
-    </div>
-    <div id="downList" style="margin-top:10px"></div>
-    <div class="row" style="justify-content:flex-end; margin-top:10px">
-      <button class="btn" value="cancel">Close</button>
-    </div>
-  </form>
-</dialog>
-
-<script>
-(function(){
-  // ---------- Helpers ----------
-  const $ = sel => document.querySelector(sel);
-  const fmt = new Intl.NumberFormat(undefined, { style:'currency', currency:'USD' });
-  function todayKey(d=new Date()){
-    const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
-    return `${y}-${m}-${dd}`;
-  }
-  function niceDate(d){ return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}); }
-  function cid(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
-  function round2(n){ return Math.round((Number(n)||0)*100)/100; }
-  function buzz(ms=30){ try{ navigator.vibrate?.(ms); }catch{} }
-  function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-  // Sound
-  let audioCtx=null;
-  function blip(){
-    try{
-      audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-      o.type='triangle'; o.frequency.setValueAtTime(880, audioCtx.currentTime);
-      g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime+0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+0.20);
-      o.connect(g); g.connect(audioCtx.destination);
-      o.start(); o.stop(audioCtx.currentTime+0.22);
-    }catch{}
-  }
-
-  // ---------- State ----------
-  const STORAGE_KEY='cashHabits.v6';
-  /**
-   * {
-   *  version, step, cashTotal, pointsTotal,
-   *  habits:[{id,name,emoji,color,incentive,step,points,isSleep?:true}],
-   *  vices:[{id,name,emoji,color,cashPenalty,pointsPenalty}],
-   *  events:[{id,ts,date,type:'habitDone'|'habitMiss'|'vice'|'spend'|'sleep',
-   *           habitId?, viceId?, cashDelta:number, pointsDelta:number, meta?:any, note?}],
-   *  daily:{ [date]: { mood?:number, focus?:number, energy?:number, sleepHours?:number } }
-   * }
-   */
-  let state = load();
-
-  function load(){
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if(saved){ try{ return JSON.parse(saved); }catch{} }
-    // defaults
-    const sleepHabit = { id:cid(), name:'Sleep', emoji:'😴', color:'#7ee787', incentive:20, step:5, points:10, isSleep:true };
-    return {
-      version:6,
-      step:5,
-      cashTotal:0,
-      pointsTotal:0,
-      habits:[
-        { id:cid(), name:'Meditation', emoji:'🧘', color:'#7ee787', incentive:20, step:5, points:10 },
-        { id:cid(), name:'Learning',   emoji:'📚', color:'#8b9cf6', incentive:20, step:5, points:10 },
-        { id:cid(), name:'Journal',    emoji:'📝', color:'#f7b955', incentive:20, step:5, points:10 },
-        { id:cid(), name:'Fitness',    emoji:'💪', color:'#20c997', incentive:20, step:5, points:12 },
-        { id:cid(), name:'Music',      emoji:'🎸', color:'#a78bfa', incentive:20, step:5, points:10 },
-        { id:cid(), name:'Cooking',    emoji:'🍳', color:'#ffb86b', incentive:20, step:5, points:10 },
-        sleepHabit
-      ],
-      vices:[
-        { id:cid(), name:'Weed',        emoji:'🌿', color:'#4ade80', cashPenalty:0,   pointsPenalty:10 },
-        { id:cid(), name:'Alcohol',     emoji:'🍺', color:'#f59e0b', cashPenalty:0,   pointsPenalty:12 },
-        { id:cid(), name:'Nicotine',    emoji:'🚬', color:'#94a3b8', cashPenalty:0,   pointsPenalty:12 },
-        { id:cid(), name:'Doomscrolling',emoji:'📱', color:'#ef4444', cashPenalty:0,  pointsPenalty:10 },
-        { id:cid(), name:'Wank',        emoji:'🫣', color:'#f472b6', cashPenalty:0,   pointsPenalty:8 },
-      ],
-      events:[],
-      daily:{}
-    };
-  }
-  function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-
-  // ---------- Money / Points / Events ----------
-  function addEvent(ev){
-    ev.id = ev.id || cid();
-    state.events.push(ev);
-    state.cashTotal = round2(state.cashTotal + (ev.cashDelta||0));
-    state.pointsTotal = Math.round((state.pointsTotal + (ev.pointsDelta||0)));
-    save(); render();
-  }
-
-  function undoLast(){
-    const last = state.events[state.events.length-1];
-    if(!last){ alert('Nothing to undo.'); return; }
-    // Reverse totals
-    state.cashTotal = round2(state.cashTotal - (last.cashDelta||0));
-    state.pointsTotal = Math.round((state.pointsTotal - (last.pointsDelta||0)));
-    // Revert habit incentives if applicable
-    if(last.type==='habitDone' || last.type==='habitMiss' || last.type==='sleep'){
-      const h = state.habits.find(x=>x.id===last.habitId);
-      if(h){
-        const delta = (last.meta && typeof last.meta.incentiveDelta==='number') ? last.meta.incentiveDelta : 0;
-        h.incentive = Math.max(0, round2(h.incentive - delta)); // reverse what was done
-      }
-      if(last.type==='sleep' && last.meta && typeof last.meta.hours==='number'){
-        // Remove stored sleepHours for that day
-        const d = state.daily[last.date] || (state.daily[last.date]={});
-        if(d.sleepHours !== undefined) delete d.sleepHours;
-      }
-    }
-    state.events.pop();
-    save(); render();
-  }
-
-  // ---------- Habit/Vice actions ----------
-  function doHabitDone(h){
-    const payout = Math.max(0, h.incentive);
-    const step = Math.max(1, h.step||state.step);
-    const ev = {
-      ts:Date.now(), date:todayKey(), type:'habitDone', habitId:h.id,
-      cashDelta:payout, pointsDelta:(h.points||10),
-      meta:{ incentiveDelta:-step } // we will apply decrease now; undo will add it back
-    };
-    // apply incentive change
-    h.incentive = Math.max(0, round2(h.incentive - step));
-    addEvent(ev);
-    buzz(30); blip();
-  }
-
-  function doHabitMiss(h){
-    const step = Math.max(1, h.step||state.step);
-    const ev = {
-      ts:Date.now(), date:todayKey(), type:'habitMiss', habitId:h.id,
-      cashDelta:0, pointsDelta:-(h.points||10),
-      meta:{ incentiveDelta:+step } // we increased now; undo will subtract
-    };
-    h.incentive = round2(h.incentive + step);
-    addEvent(ev);
-    buzz(15);
-  }
-
-  function doVice(v){
-    const cashPen = -Math.abs(Number(v.cashPenalty||0));
-    const ptsPen  = -Math.abs(Number(v.pointsPenalty||10));
-    addEvent({ ts:Date.now(), date:todayKey(), type:'vice', viceId:v.id, cashDelta:cashPen, pointsDelta:ptsPen });
-    buzz(15);
-  }
-
-  function spend(amount, note){
-    const a=Number(amount)||0; if(a<=0) return;
-    if(a>state.cashTotal){ alert(`You only have ${fmt.format(state.cashTotal)} available.`); return; }
-    addEvent({ ts:Date.now(), date:todayKey(), type:'spend', cashDelta:-a, pointsDelta:0, note:String(note||'') });
-  }
-
-  // ---------- Sleep handling ----------
-  function setSleepHours(hours){
-    hours = Math.max(0, Math.min(12, Number(hours)||0));
-    const k = todayKey();
-    const d = state.daily[k] || (state.daily[k]={});
-    // If there was a previous sleep event today, undo it first (clean replace)
-    const idx = [...state.events].reverse().findIndex(e=>e.date===k && e.type==='sleep');
-    if(idx !== -1){
-      const realIndex = state.events.length-1-idx;
-      const prev = state.events[realIndex];
-      // reverse totals
-      state.cashTotal = round2(state.cashTotal - (prev.cashDelta||0));
-      state.pointsTotal = Math.round((state.pointsTotal - (prev.pointsDelta||0)));
-      // reverse incentive shift
-      const h = state.habits.find(x=>x.id===prev.habitId);
-      if(h && prev.meta && typeof prev.meta.incentiveDelta==='number'){
-        h.incentive = Math.max(0, round2(h.incentive - prev.meta.incentiveDelta));
-      }
-      state.events.splice(realIndex,1);
-    }
-    d.sleepHours = hours;
-    // Apply new sleep effect
-    const sleep = state.habits.find(x=>x.isSleep);
-    if(!sleep){ save(); render(); return; }
-    const step = Math.max(1, sleep.step||state.step);
-    let cashDelta=0, pointsDelta=0, incentiveDelta=0;
-    if(hours >= 8){
-      cashDelta = Math.max(0, sleep.incentive);
-      pointsDelta = (sleep.points||10);
-      incentiveDelta = -step; // decreased incentive
-      sleep.incentive = Math.max(0, round2(sleep.incentive - step));
-    }else{
-      // Miss: no cash, negative points
-      cashDelta = 0;
-      pointsDelta = -(sleep.points||10);
-      incentiveDelta = +step; // increased incentive
-      sleep.incentive = round2(sleep.incentive + step);
-    }
-    addEvent({
-      ts:Date.now(), date:k, type:'sleep', habitId:sleep.id,
-      cashDelta, pointsDelta, meta:{ hours, incentiveDelta }
-    });
-  }
-
-  // ---------- UI builders ----------
-  function habitRow(h){
-    const wrap=document.createElement('div');
-    wrap.className='card';
-    wrap.style.borderColor=h.color||'#7ee787';
-    if(h.isSleep){
-      // sleep is managed by its own card above
-      return document.createElement('div');
-    }
-    wrap.innerHTML=`
-      <div class="row split">
-        <div class="big"><span class="emoji">${escapeHTML(h.emoji||'')}</span> ${escapeHTML(h.name)}</div>
-        <div class="row" style="gap:8px">
-          <span class="tag">${fmt.format(h.incentive)} next</span>
-          <span class="tag">±$${h.step||state.step}</span>
-          <span class="tag">+${h.points||10} pts</span>
-          <button class="btn small" data-edit>🎨 Edit</button>
-          <button class="btn small" data-del>🗑️</button>
+        <div class="row">
+          <div class="chip habit"><span class="dot"></span><span>Habits</span></div>
+          <div class="chip vice"><span class="dot"></span><span>Vices</span></div>
         </div>
       </div>
-      <div class="row center" style="gap:12px; margin-top:8px">
-        <button class="tallyBtn tallyUp" data-done>✅</button>
-        <button class="tallyBtn tallyDown" data-miss>✖️</button>
-      </div>
-      <div class="streak" aria-label="mini chart">${miniDots(h.id).join('')}</div>
-    `;
-    wrap.querySelector('[data-done]').onclick=()=>doHabitDone(h);
-    wrap.querySelector('[data-miss]').onclick=()=>doHabitMiss(h);
-    wrap.querySelector('[data-del]').onclick=()=>{ if(confirm('Delete habit?')){ state.habits=state.habits.filter(x=>x.id!==h.id); save(); render(); } };
-    wrap.querySelector('[data-edit]').onclick=()=>openEdit('habit', h);
-    return wrap;
-  }
 
-  function viceRow(v){
-    const wrap=document.createElement('div');
-    wrap.className='card';
-    wrap.style.borderColor=v.color||'#ff6b6b';
-    wrap.innerHTML=`
-      <div class="row split">
-        <div class="big"><span class="emoji">${escapeHTML(v.emoji||'')}</span> ${escapeHTML(v.name)}</div>
-        <div class="row" style="gap:8px">
-          <span class="tag">${v.cashPenalty?`−${fmt.format(Math.abs(v.cashPenalty))}`:'$0'} cash</span>
-          <span class="tag">−${Math.abs(v.pointsPenalty||10)} pts</span>
-          <button class="btn small" data-edit>🎨 Edit</button>
-          <button class="btn small" data-del>🗑️</button>
+      <div class="spacer"></div>
+
+      <!-- Sliders -->
+      <div class="row">
+        <div class="slider sleep">
+          <label for="sleepSlider">Sleep (hrs)</label>
+          <input id="sleepSlider" type="range" min="0" max="12" value="7">
+        </div>
+        <div class="slider mood">
+          <label for="moodSlider">Mood (0–10)</label>
+          <input id="moodSlider" type="range" min="0" max="10" value="6">
+        </div>
+        <div class="slider energy">
+          <label for="energySlider">Energy (0–10)</label>
+          <input id="energySlider" type="range" min="0" max="10" value="6">
+        </div>
+        <div class="slider focus">
+          <label for="focusSlider">Focus (0–10)</label>
+          <input id="focusSlider" type="range" min="0" max="10" value="6">
         </div>
       </div>
-      <div class="row center" style="gap:12px; margin-top:8px">
-        <button class="tallyBtn tallyDown" data-do>Log ⬇️</button>
+    </div>
+
+    <!-- ===== Trends ===== -->
+    <div class="card">
+      <h1>Trends</h1>
+      <div class="canvas-wrap">
+        <canvas id="trendChart" height="300"></canvas>
       </div>
-    `;
-    wrap.querySelector('[data-do]').onclick=()=>doVice(v);
-    wrap.querySelector('[data-del]').onclick=()=>{ if(confirm('Delete vice?')){ state.vices=state.vices.filter(x=>x.id!==v.id); save(); render(); } };
-    wrap.querySelector('[data-edit]').onclick=()=>openEdit('vice', v);
-    return wrap;
-  }
+    </div>
+  </div>
 
-  // Mini 14-day dots per habit
-  function miniDots(habitId){
-    const dots=[];
-    for(let i=13;i>=0;i--){
-      const d=new Date(); d.setDate(d.getDate()-i); const k=todayKey(d);
-      const ev = state.events.filter(e=>e.date===k && (e.habitId===habitId) );
-      const plus = ev.some(e=>e.type==='habitDone' || (e.type==='sleep' && e.pointsDelta>0));
-      const minusOnly = !plus && ev.some(e=>e.type==='habitMiss' || (e.type==='sleep' && e.pointsDelta<0));
-      dots.push(`<span class="dot ${plus?'plus':(minusOnly?'minus':'')} ${i===0?'today':''}" title="${k}"></span>`);
-    }
-    return dots;
-  }
+  <!-- ===== Habit/Vice Selector (Bottom Sheet) ===== -->
+  <div class="sheet" id="selectorSheet" aria-hidden="true">
+    <div class="grab"></div>
+    <h2 id="sheetTitle">Select Habit or Vice</h2>
 
-  // ---------- Tally modals ----------
-  const upModal = $('#upModal'); const upList = $('#upList');
-  const downModal = $('#downModal'); const downList = $('#downList'); const downMode = $('#downMode');
+    <div class="tabbar">
+      <div class="tab active" id="tabHabits" role="button" aria-controls="listHabits">Habits</div>
+      <div class="tab" id="tabVices" role="button" aria-controls="listVices">Vices</div>
+    </div>
 
-  $('#tallyUp').onclick = ()=>{
-    upList.innerHTML = '';
-    state.habits.filter(h=>!h.isSleep).forEach(h=>{
-      const b=document.createElement('button');
-      b.className='btn'; b.style=`border-color:${h.color};`;
-      b.textContent = `${h.emoji||''} ${h.name}  · +${fmt.format(h.incentive)}  · +${h.points||10}pts`;
-      b.onclick = ()=>{ upModal.close(); doHabitDone(h); };
-      upList.appendChild(b);
-    });
-    upModal.showModal();
-  };
+    <div class="list" id="listHabits">
+      <!-- Default Habits with data attributes for points/cash -->
+      <div class="item habit" data-type="habit" data-name="Meditation" data-points="1" data-cash="1"><span class="name">Meditation</span><span class="meta">+1 pt • +$1</span></div>
+      <div class="item habit" data-type="habit" data-name="Learning"   data-points="1" data-cash="1"><span class="name">Learning</span><span class="meta">+1 pt • +$1</span></div>
+      <div class="item habit" data-type="habit" data-name="Journal"    data-points="1" data-cash="1"><span class="name">Journal</span><span class="meta">+1 pt • +$1</span></div>
+      <div class="item habit" data-type="habit" data-name="Fitness"    data-points="2" data-cash="2"><span class="name">Fitness</span><span class="meta">+2 pt • +$2</span></div>
+      <div class="item habit" data-type="habit" data-name="Music"      data-points="1" data-cash="1"><span class="name">Music</span><span class="meta">+1 pt • +$1</span></div>
+      <div class="item habit" data-type="habit" data-name="Cooking"    data-points="1" data-cash="1"><span class="name">Cooking</span><span class="meta">+1 pt • +$1</span></div>
+      <div class="item habit" data-type="habit" data-name="Sleep ≥ 8h" data-points="2" data-cash="2"><span class="name">Sleep ≥ 8h</span><span class="meta">+2 pt • +$2</span></div>
+    </div>
 
-  function renderDownList(){
-    downList.innerHTML='';
-    if(downMode.value==='habit'){
-      state.habits.filter(h=>!h.isSleep).forEach(h=>{
-        const b=document.createElement('button');
-        b.className='btn'; b.style=`border-color:${h.color};`;
-        b.textContent = `${h.emoji||''} Missed ${h.name}  · incentive +$${h.step||state.step}  · −${h.points||10}pts`;
-        b.onclick = ()=>{ downModal.close(); doHabitMiss(h); };
-        downList.appendChild(b);
-      });
-      // include sleep quick set (miss) as 0h shortcut
-      const sb=document.createElement('button');
-      sb.className='btn'; sb.style=`border-color:#7ee787;`;
-      sb.textContent = `😴 Sleep miss (set 0h today)`;
-      sb.onclick = ()=>{ downModal.close(); setSleepHours(0); };
-      downList.appendChild(sb);
-    } else {
-      state.vices.forEach(v=>{
-        const b=document.createElement('button');
-        b.className='btn'; b.style=`border-color:${v.color};`;
-        const cashTxt = v.cashPenalty? ` −${fmt.format(Math.abs(v.cashPenalty))}` : '';
-        b.textContent = `${v.emoji||''} ${v.name}  ·${cashTxt}  · −${Math.abs(v.pointsPenalty||10)}pts`;
-        b.onclick = ()=>{ downModal.close(); doVice(v); };
-        downList.appendChild(b);
-      });
-    }
-  }
-  downMode.onchange = renderDownList;
-  $('#tallyDown').onclick = ()=>{ renderDownList(); downModal.showModal(); };
+    <div class="list" id="listVices" style="display:none">
+      <!-- Default Vices -->
+      <div class="item vice" data-type="vice" data-name="Weed"         data-points="-1" data-cash="-1"><span class="name">Weed</span><span class="meta">-1 pt • -$1</span></div>
+      <div class="item vice" data-type="vice" data-name="Alcohol"      data-points="-2" data-cash="-2"><span class="name">Alcohol</span><span class="meta">-2 pt • -$2</span></div>
+      <div class="item vice" data-type="vice" data-name="Nicotine"     data-points="-2" data-cash="-2"><span class="name">Nicotine</span><span class="meta">-2 pt • -$2</span></div>
+      <div class="item vice" data-type="vice" data-name="Doomscrolling" data-points="-1" data-cash="-1"><span class="name">Doomscrolling</span><span class="meta">-1 pt • -$1</span></div>
+      <div class="item vice" data-type="vice" data-name="Wank"         data-points="-1" data-cash="-1"><span class="name">Wank</span><span class="meta">-1 pt • -$1</span></div>
+      <div class="item vice" data-type="vice" data-name="Sleep < 6h"   data-points="-2" data-cash="-2"><span class="name">Sleep &lt; 6h</span><span class="meta">-2 pt • -$2</span></div>
+    </div>
 
-  // ---------- Sleep UI wiring ----------
-  const sleepRange = $('#sleepRange'), sleepVal=$('#sleepVal');
-  function updateSleepUI(){
-    const sleep = state.habits.find(x=>x.isSleep);
-    if(!sleep) return;
-    $('#sleepNext').textContent = `${fmt.format(sleep.incentive)} next`;
-    $('#sleepStep').textContent = String(sleep.step||state.step);
-    $('#sleepPts').textContent = String(sleep.points||10);
-    // set slider from saved
-    const d = state.daily[todayKey()] || {};
-    const v = typeof d.sleepHours==='number'? d.sleepHours : 0;
-    sleepRange.value = v; sleepVal.textContent = v;
-  }
-  sleepRange.addEventListener('input', ()=>{
-    sleepVal.textContent = sleepRange.value;
-  });
-  sleepRange.addEventListener('change', ()=>{
-    setSleepHours(sleepRange.value);
-  });
+    <div class="footer">
+      <button class="btn secondary" id="sheetCancel">Cancel</button>
+      <button class="btn primary" id="sheetApply">Apply</button>
+    </div>
+  </div>
 
-  // ---------- Mood/Focus/Energy ----------
-  const moodRange=$('#moodRange'), focusRange=$('#focusRange'), energyRange=$('#energyRange');
-  const moodVal=$('#moodVal'), focusVal=$('#focusVal'), energyVal=$('#energyVal');
-  function loadMFE(){
-    const d = state.daily[todayKey()] || {};
-    moodRange.value = d.mood ?? 0; focusRange.value = d.focus ?? 0; energyRange.value = d.energy ?? 0;
-    moodVal.textContent = moodRange.value; focusVal.textContent = focusRange.value; energyVal.textContent = energyRange.value;
-  }
-  function saveMFE(){
-    const k=todayKey(); const d=state.daily[k] || (state.daily[k]={});
-    d.mood = Number(moodRange.value); d.focus = Number(focusRange.value); d.energy = Number(energyRange.value);
-    save();
-  }
-  [moodRange,focusRange,energyRange].forEach(r=>{
-    r.addEventListener('input', ()=>{ moodVal.textContent=moodRange.value; focusVal.textContent=focusRange.value; energyVal.textContent=energyRange.value; });
-    r.addEventListener('change', saveMFE);
-  });
+  <!-- Hook up behavior in your app.js -->
+  <script src="app.js"></script>
+  <script>
+    /* Minimal sheet tab toggles (keep logic simple; replace with app.js if you want) */
+    const sheet = document.getElementById('selectorSheet');
+    const tabH  = document.getElementById('tabHabits');
+    const tabV  = document.getElementById('tabVices');
+    const listH = document.getElementById('listHabits');
+    const listV = document.getElementById('listVices');
+    const btnUp = document.getElementById('btnUp');
+    const btnDown = document.getElementById('btnDown');
+    const sheetTitle = document.getElementById('sheetTitle');
 
-  // ---------- Lists & History ----------
-  function habitListRender(){
-    const list=$('#habitList'); list.innerHTML='';
-    state.habits.filter(h=>!h.isSleep).forEach(h=> list.appendChild(habitRow(h)));
-  }
-  function viceListRender(){
-    const list=$('#viceList'); list.innerHTML='';
-    state.vices.forEach(v=> list.appendChild(viceRow(v)));
-  }
-
-  function renderHistory(){
-    const k=todayKey();
-    const box = $('#todayHistory');
-    const todays = state.events.filter(e=>e.date===k).slice(-30);
-    box.innerHTML = todays.length? todays.map(e=>{
-      if(e.type==='habitDone'){
-        const h = state.habits.find(x=>x.id===e.habitId);
-        return `<div class="row split" style="margin:6px 0"><div>✅ ${escapeHTML(h?.name||'Habit')}</div><div>+${fmt.format(e.cashDelta)} · +${e.pointsDelta}pts</div></div>`;
-      } else if(e.type==='habitMiss'){
-        const h = state.habits.find(x=>x.id===e.habitId);
-        return `<div class="row split" style="margin:6px 0"><div>✖️ Missed ${escapeHTML(h?.name||'Habit')}</div><div>−${Math.abs(e.pointsDelta)}pts</div></div>`;
-      } else if(e.type==='sleep'){
-        const h = state.habits.find(x=>x.id===e.habitId);
-        const hours = e.meta?.hours ?? 0;
-        const pts = e.pointsDelta;
-        const cash = e.cashDelta? ` +${fmt.format(e.cashDelta)}` : '';
-        return `<div class="row split" style="margin:6px 0"><div>😴 Sleep ${hours}h</div><div>${cash} ${pts>=0?`· +${pts}`:`· −${Math.abs(pts)}`}pts</div></div>`;
-      } else if(e.type==='vice'){
-        const v = state.vices.find(x=>x.id===e.viceId);
-        const cash = e.cashDelta? `${e.cashDelta<0?'−':''}${fmt.format(Math.abs(e.cashDelta))}` : '$0.00';
-        return `<div class="row split" style="margin:6px 0"><div>⬇️ ${escapeHTML(v?.name||'Vice')}</div><div>${cash} · −${Math.abs(e.pointsDelta)}pts</div></div>`;
-      } else {
-        return `<div class="row split" style="margin:6px 0"><div>🛍️ ${escapeHTML(e.note||'Spent')}</div><div>−${fmt.format(Math.abs(e.cashDelta||0))}</div></div>`;
-      }
-    }).join('') : `<div class="sub">No entries yet today.</div>`;
-  }
-
-  // ---------- Graph ----------
-  function dayPoints(dateKey){
-    const pts = state.events.filter(e=>e.date===dateKey).reduce((s,e)=>s+(e.pointsDelta||0),0);
-    return pts;
-  }
-  function drawDailyGraph(){
-    const c = $('#dailyGraph'), ctx=c.getContext('2d');
-    const W=c.width, H=c.height;
-    ctx.clearRect(0,0,W,H);
-    const days=[];
-    for(let i=13;i>=0;i--){
-      const d=new Date(); d.setDate(d.getDate()-i); const k=todayKey(d);
-      days.push({k, val: dayPoints(k)});
-    }
-    const maxAbs = Math.max(10, ...days.map(d=>Math.abs(d.val)));
-    const barW = W / days.length - 6;
-    days.forEach((d, idx)=>{
-      const x = idx*(W/days.length)+3;
-      const mid=H*0.62;
-      const h = (Math.abs(d.val)/maxAbs)*(H*0.52);
-      const y = d.val>=0 ? mid - h : mid;
-      ctx.fillStyle = d.val>=0 ? getComputedStyle(document.documentElement).getPropertyValue('--green') || '#20c997'
-                               : getComputedStyle(document.documentElement).getPropertyValue('--red')   || '#ff6b6b';
-      ctx.fillRect(x, y, barW, Math.max(2, h));
-      // baseline
-      ctx.fillStyle='#4a4f65'; ctx.fillRect(x, mid, barW, 1);
-      // today thicker line
-      if(idx===days.length-1){ ctx.fillStyle='#e9ecf1'; ctx.fillRect(x, mid-1, barW, 2); }
-    });
-  }
-
-  // ---------- Edit Modal ----------
-  const settingsModal = document.createElement('dialog');
-  settingsModal.innerHTML = `
-    <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
-      <h3>Settings</h3>
-      <div class="row" style="gap:10px">
-        <label class="tag">Default Step (±)</label>
-        <input id="stepInput" class="number" type="number" min="1" step="1" />
-      </div>
-      <div class="row" style="justify-content:flex-end; margin-top:10px">
-        <button class="btn" value="cancel">Close</button>
-        <button class="btn" value="submit">Save</button>
-      </div>
-    </form>`;
-  document.body.appendChild(settingsModal);
-  $('#settingsBtn').onclick = ()=>{
-    settingsModal.querySelector('#stepInput').value = state.step;
-    settingsModal.showModal();
-  };
-  settingsModal.addEventListener('close', ()=>{
-    if(settingsModal.returnValue==='submit'){
-      const n=Math.max(1, Math.floor(Number(settingsModal.querySelector('#stepInput').value)||state.step||5));
-      state.step=n; save(); render();
-    }
-  });
-
-  const editModal = document.createElement('dialog');
-  editModal.innerHTML = `
-    <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
-      <h3 id="editTitle">Edit</h3>
-      <div class="row" style="gap:8px">
-        <input id="editName" class="input" placeholder="Name" />
-        <input id="editEmoji" class="input" placeholder="Emoji" style="max-width:110px" />
-        <input id="editColor" type="color" class="input" value="#7ee787" style="max-width:110px; padding:6px 8px; height:44px" />
-      </div>
-      <div class="row" id="editMore" style="gap:8px; margin-top:8px"></div>
-      <div class="row" style="justify-content:flex-end; margin-top:10px">
-        <button class="btn" value="cancel">Cancel</button>
-        <button class="btn" value="submit">Save</button>
-      </div>
-    </form>`;
-  document.body.appendChild(editModal);
-  let editObj=null, editType='habit';
-
-  function openEdit(type, obj){
-    editType=type; editObj=obj;
-    const more = editModal.querySelector('#editMore'); more.innerHTML='';
-    editModal.querySelector('#editTitle').textContent = type==='habit' ? 'Edit Habit' : 'Edit Vice';
-    editModal.querySelector('#editName').value = obj.name||'';
-    editModal.querySelector('#editEmoji').value = obj.emoji||'';
-    editModal.querySelector('#editColor').value = obj.color|| (type==='habit'?'#7ee787':'#ff6b6b');
-    if(type==='habit'){
-      more.innerHTML = `
-        <input id="editIncentive" class="number" type="number" min="0" step="1" placeholder="Current reward $" value="${obj.incentive||0}" />
-        <input id="editStep" class="number" type="number" min="1" step="1" placeholder="Step ±$" value="${obj.step||state.step}" />
-        <input id="editPts" class="number" type="number" step="1" placeholder="Points per completion" value="${obj.points||10}" />
-      `;
-    }else{
-      more.innerHTML = `
-        <input id="editPenaltyCash" class="number" type="number" step="1" placeholder="Cash penalty $" value="${obj.cashPenalty||0}" />
-        <input id="editPenaltyPts" class="number" type="number" step="1" placeholder="Points penalty" value="${obj.pointsPenalty||10}" />
-      `;
-    }
-    editModal.showModal();
-  }
-  editModal.addEventListener('close', ()=>{
-    if(editModal.returnValue==='submit' && editObj){
-      editObj.name = String(editModal.querySelector('#editName').value||editObj.name);
-      editObj.emoji = String(editModal.querySelector('#editEmoji').value||'').slice(0,2);
-      editObj.color = editModal.querySelector('#editColor').value || editObj.color;
-      if(editType==='habit'){
-        const n1=Number(editModal.querySelector('#editIncentive').value); if(isFinite(n1)&&n1>=0) editObj.incentive=round2(n1);
-        const n2=Number(editModal.querySelector('#editStep').value); if(isFinite(n2)&&n2>=1) editObj.step=Math.round(n2);
-        const n3=Number(editModal.querySelector('#editPts').value); if(isFinite(n3)) editObj.points=Math.round(n3);
+    function openSheet(type){
+      sheet.classList.add('open');
+      sheet.setAttribute('aria-hidden','false');
+      if(type==='habit'){
+        tabH.classList.add('active'); tabV.classList.remove('active');
+        listH.style.display='grid';    listV.style.display='none';
+        sheetTitle.textContent = 'Select Habit';
       }else{
-        const p1=Number(editModal.querySelector('#editPenaltyCash').value); if(isFinite(p1)) editObj.cashPenalty=Math.round(p1);
-        const p2=Number(editModal.querySelector('#editPenaltyPts').value); if(isFinite(p2)) editObj.pointsPenalty=Math.round(p2);
+        tabV.classList.add('active'); tabH.classList.remove('active');
+        listV.style.display='grid';    listH.style.display='none';
+        sheetTitle.textContent = 'Select Vice';
       }
-      save(); render();
     }
-    editObj=null;
-  });
-
-  // ---------- Add Habit / Vice ----------
-  $('#addHabitBtn').onclick = ()=>{
-    const name=$('#newHabitName').value.trim(); if(!name){ alert('Enter a habit name'); return; }
-    const emoji=$('#newHabitEmoji').value.trim().slice(0,2);
-    const color=$('#newHabitColor').value || '#7ee787';
-    let start=Number($('#newHabitStart').value); if(!isFinite(start)||start<0) start=20;
-    let pts=Number($('#newHabitPts').value); if(!isFinite(pts)) pts=10;
-    state.habits.push({ id:cid(), name, emoji, color, incentive:round2(start), step:state.step, points:Math.round(pts) });
-    $('#newHabitName').value=''; $('#newHabitEmoji').value=''; $('#newHabitStart').value=''; $('#newHabitPts').value='';
-    save(); render();
-  };
-  $('#addViceBtn').onclick = ()=>{
-    const name=$('#newViceName').value.trim(); if(!name){ alert('Enter a vice name'); return; }
-    const emoji=$('#newViceEmoji').value.trim().slice(0,2);
-    const color=$('#newViceColor').value || '#ff6b6b';
-    let cash=Number($('#newViceCash').value); if(!isFinite(cash)) cash=0;
-    let pts=Number($('#newVicePts').value); if(!isFinite(pts)) pts=10;
-    state.vices.push({ id:cid(), name, emoji, color, cashPenalty:Math.round(cash), pointsPenalty:Math.round(pts) });
-    $('#newViceName').value=''; $('#newViceEmoji').value=''; $('#newViceCash').value=''; $('#newVicePts').value='';
-    save(); render();
-  };
-
-  // ---------- Export ----------
-  function download(filename, text){
-    const blob = new Blob([text], {type:'text/plain'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
-  }
-  function exportJSON(){
-    download(`cash-habits-${todayKey()}.json`, JSON.stringify(state, null, 2));
-  }
-  function exportCSV(){
-    const headers = ['id','ts','date','type','name','cashDelta','pointsDelta','note','sleepHours','mood','focus','energy'];
-    const lines = [headers.join(',')];
-    const daily = state.daily || {};
-    for(const e of state.events){
-      const d = daily[e.date] || {};
-      let name = '';
-      if(e.type==='habitDone' || e.type==='habitMiss' || e.type==='sleep'){
-        const h = state.habits.find(x=>x.id===e.habitId); name = h?.name||'';
-      } else if(e.type==='vice'){
-        const v = state.vices.find(x=>x.id===e.viceId); name = v?.name||'';
-      } else { name = 'Spend'; }
-      const row = [
-        e.id, e.ts, e.date, e.type, name.replace(/,/g,';'),
-        e.cashDelta||0, e.pointsDelta||0, (e.note||'').replace(/,/g,';'),
-        (e.type==='sleep'?(e.meta?.hours??''):''), d.mood??'', d.focus??'', d.energy??''
-      ].join(',');
-      lines.push(row);
+    function closeSheet(){
+      sheet.classList.remove('open');
+      sheet.setAttribute('aria-hidden','true');
     }
-    download(`cash-habits-events-${todayKey()}.csv`, lines.join('\n'));
-  }
+    tabH.addEventListener('click', ()=>openSheet('habit'));
+    tabV.addEventListener('click', ()=>openSheet('vice'));
+    btnUp.addEventListener('click', ()=>openSheet('habit'));
+    btnDown.addEventListener('click', ()=>openSheet('vice'));
+    document.getElementById('sheetCancel').addEventListener('click', closeSheet);
+    document.getElementById('sheetApply').addEventListener('click', closeSheet);
 
-  // ---------- History / Graph render ----------
-  function render(){
-    $('#cashTotal').textContent = fmt.format(state.cashTotal);
-    $('#pointsTotal').textContent = String(state.pointsTotal);
-    $('#todayText').textContent = niceDate(new Date());
-    $('#stepDisplay').textContent = `$${state.step}`;
-    habitListRender();
-    viceListRender();
-    renderHistory();
-    drawDailyGraph();
-    loadMFE();
-    updateSleepUI();
-  }
-
-  // ---------- Wire top actions ----------
-  const spendModal = $('#spendModal');
-  document.getElementById('exportJsonBtn').onclick = exportJSON;
-  document.getElementById('exportCsvBtn').onclick = exportCSV;
-  document.getElementById('undoBtn').onclick = undoLast;
-
-  // Spend flow
-  const spendBtn = document.createElement('button');
-  document.getElementById('settingsBtn').insertAdjacentElement('beforebegin', spendBtn);
-  document.getElementById('settingsBtn').previousElementSibling?.remove(); // cleanup if dup
-  document.getElementById('settingsBtn').insertAdjacentElement('beforebegin', document.getElementById('spendBtn'));
-  document.getElementById('spendBtn').onclick = ()=>spendModal.showModal();
-  spendModal.addEventListener('close', ()=>{
-    if(spendModal.returnValue==='submit'){
-      spend($('#spendAmt').value, $('#spendNote').value);
-      $('#spendAmt').value=''; $('#spendNote').value='';
-    }
-  });
-
-  // Initial render
-  render();
-})();
-</script>
+    // Optional: let app.js capture clicks on .item via event delegation
+    document.getElementById('listHabits').addEventListener('click', e=>{
+      const el = e.target.closest('.item'); if(!el) return;
+      window.selectedChoice = el.dataset; // {type,name,points,cash}
+    });
+    document.getElementById('listVices').addEventListener('click', e=>{
+      const el = e.target.closest('.item'); if(!el) return;
+      window.selectedChoice = el.dataset;
+    });
+  </script>
 </body>
 </html>
