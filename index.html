@@ -12,8 +12,8 @@
 <style>
   :root{
     --bg:#0f1115; --card:#171a21; --ink:#e9ecf1; --muted:#9aa3b2; --ring:#2a2f3a; --shadow:#0006;
-    --good:#1b8f63; --good-d:#117d57; --bad:#b0232c; --bad-d:#7f1820; --neutral:#2a3142;
-    --green:#20c997; --red:#ff6b6b; --grey:#3b4356;
+    --good:#1b8f63; --good-d:#117d57; --bad:#b0232c; --bad-d:#7f1820;
+    --green:#20c997; --red:#ff6b6b;
   }
   html,body{height:100%}
   body{
@@ -21,7 +21,7 @@
     font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
     -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
   }
-  .app{ max-width:860px; margin:0 auto; padding: env(safe-area-inset-top) 14px 18px }
+  .app{ max-width:900px; margin:0 auto; padding: env(safe-area-inset-top) 14px 18px }
   .row{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
   .split{justify-content:space-between}
   .center{justify-content:center}
@@ -29,6 +29,7 @@
   .sub{color:var(--muted); font-size:12px}
   .balance{font-weight:800; font-size:26px}
   .big{font-weight:800; font-size:22px}
+
   .topbar{
     position:sticky; top:0; z-index:10; backdrop-filter: blur(10px);
     background: linear-gradient(180deg, rgba(15,17,21,.92), rgba(15,17,21,.76) 60%, transparent);
@@ -41,12 +42,11 @@
     box-shadow: 0 10px 20px var(--shadow); margin:12px 0;
   }
   .card h3{margin:0 0 6px; font-size:18px}
-  .input, .number, select{
+  .input, .number, select, input[type="range"]{
     width:100%; box-sizing:border-box; padding:12px 12px; color:var(--ink);
     background:#0e121b; border:1px solid var(--ring); border-radius:12px; outline:none;
   }
-  .number{appearance:textfield}
-  .number::-webkit-outer-spin-button,.number::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  input[type="range"]{ padding:10px 8px; height:42px; }
 
   .btn{
     appearance:none; -webkit-appearance:none; cursor:pointer;
@@ -70,8 +70,9 @@
     display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px;
     background:#0f1320; border:1px solid #1a2030; color:#cfd6e6; font-size:12px; font-weight:700;
   }
+  .emoji{font-size:18px}
 
-  /* Mini streak chart dots (per habit) */
+  /* Streak mini chart dots (per habit) */
   .streak{ display:flex; gap:4px; flex-wrap:wrap; margin-top:6px }
   .dot{ width:12px; height:12px; border-radius:4px; border:1px solid #2a3142; background:#0f1320 }
   .dot.plus{ background:#1b8f63 }
@@ -82,14 +83,11 @@
   .graphWrap{ width:100%; height:140px; }
   #dailyGraph{ width:100%; height:140px; display:block; }
 
-  /* Confetti canvas */
-  #fx{ position:fixed; inset:0; width:100vw; height:100vh; pointer-events:none; z-index:999 }
+  /* Layout helpers */
   .spacer{height: env(safe-area-inset-bottom)}
-  .emoji{font-size:18px}
 </style>
 </head>
 <body>
-<canvas id="fx"></canvas>
 
 <div class="app">
   <!-- Header / Tally -->
@@ -103,8 +101,10 @@
         <div class="sub">Points</div>
         <div class="balance" id="pointsTotal">0</div>
       </div>
-      <div class="row">
-        <button class="btn" id="spendBtn">🛍️ Spend</button>
+      <div class="row" style="gap:8px">
+        <button class="btn" id="undoBtn" title="Undo last action">↩️ Undo</button>
+        <button class="btn" id="exportJsonBtn" title="Export JSON">⬇️ JSON</button>
+        <button class="btn" id="exportCsvBtn" title="Export CSV">⬇️ CSV</button>
         <button class="btn" id="settingsBtn">⚙️</button>
       </div>
     </div>
@@ -123,12 +123,48 @@
     <div class="sub">Green = net positive • Red = net negative</div>
   </div>
 
+  <!-- Quick Mood / Focus / Energy -->
+  <div class="card">
+    <h3>How do you feel today?</h3>
+    <div class="row" style="gap:10px">
+      <div class="grow">
+        <div class="sub">Mood: <span id="moodVal">0</span>/10</div>
+        <input id="moodRange" type="range" min="0" max="10" step="1" value="0" />
+      </div>
+      <div class="grow">
+        <div class="sub">Focus: <span id="focusVal">0</span>/10</div>
+        <input id="focusRange" type="range" min="0" max="10" step="1" value="0" />
+      </div>
+      <div class="grow">
+        <div class="sub">Energy: <span id="energyVal">0</span>/10</div>
+        <input id="energyRange" type="range" min="0" max="10" step="1" value="0" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Sleep -->
+  <div class="card" id="sleepCard">
+    <h3>Sleep (goal 8h)</h3>
+    <div class="row" style="gap:10px">
+      <div class="grow">
+        <div class="sub">Hours: <span id="sleepVal">0</span>h</div>
+        <input id="sleepRange" type="range" min="0" max="12" step="0.25" value="0" />
+      </div>
+      <div class="row" style="gap:8px">
+        <span class="tag" id="sleepNext">$0.00 next</span>
+        <span class="tag">±$<span id="sleepStep">5</span></span>
+        <span class="tag">+<span id="sleepPts">10</span> pts</span>
+      </div>
+    </div>
+    <div class="sub" style="margin-top:6px">Slide to log/adjust today’s sleep. ≥ 8h grants reward & points; < 8h gives a points penalty and raises tomorrow’s incentive.</div>
+  </div>
+
   <!-- Habits -->
   <div class="card">
-    <h3>Habits (good)</h3>
+    <h3>Habits</h3>
     <div id="habitList"></div>
     <div class="row" style="gap:8px; margin-top:10px">
-      <input id="newHabitName" class="input" placeholder="Habit name (e.g., Mindfulness)" />
+      <input id="newHabitName" class="input" placeholder="Habit name" />
       <input id="newHabitEmoji" class="input" placeholder="Emoji (e.g., 🧘)" style="max-width:110px" />
       <input id="newHabitColor" type="color" class="input" value="#7ee787" style="max-width:110px; padding:6px 8px; height:44px" />
     </div>
@@ -141,10 +177,10 @@
 
   <!-- Vices -->
   <div class="card">
-    <h3>Vices (temptations)</h3>
+    <h3>Vices</h3>
     <div id="viceList"></div>
     <div class="row" style="gap:8px; margin-top:10px">
-      <input id="newViceName" class="input" placeholder="Vice name (e.g., Doomscroll)" />
+      <input id="newViceName" class="input" placeholder="Vice name" />
       <input id="newViceEmoji" class="input" placeholder="Emoji (e.g., 📱)" style="max-width:110px" />
       <input id="newViceColor" type="color" class="input" value="#ff6b6b" style="max-width:110px; padding:6px 8px; height:44px" />
     </div>
@@ -155,7 +191,7 @@
     </div>
   </div>
 
-  <!-- History (today) -->
+  <!-- Today -->
   <div class="card">
     <h3>Today</h3>
     <div id="todayHistory"></div>
@@ -188,7 +224,7 @@
   </form>
 </dialog>
 
-<!-- Tally Down Modal (choose habit missed or vice did) -->
+<!-- Tally Down Modal -->
 <dialog id="downModal">
   <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
     <h3>Log a miss or a vice</h3>
@@ -201,23 +237,6 @@
     <div id="downList" style="margin-top:10px"></div>
     <div class="row" style="justify-content:flex-end; margin-top:10px">
       <button class="btn" value="cancel">Close</button>
-    </div>
-  </form>
-</dialog>
-
-<!-- Edit Habit/Vice Modal -->
-<dialog id="editModal">
-  <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
-    <h3 id="editTitle">Edit</h3>
-    <div class="row" style="gap:8px">
-      <input id="editName" class="input" placeholder="Name" />
-      <input id="editEmoji" class="input" placeholder="Emoji" style="max-width:110px" />
-      <input id="editColor" type="color" class="input" value="#7ee787" style="max-width:110px; padding:6px 8px; height:44px" />
-    </div>
-    <div class="row" id="editMore" style="gap:8px; margin-top:8px"></div>
-    <div class="row" style="justify-content:flex-end; margin-top:10px">
-      <button class="btn" value="cancel">Cancel</button>
-      <button class="btn" value="submit">Save</button>
     </div>
   </form>
 </dialog>
@@ -237,9 +256,9 @@
   function buzz(ms=30){ try{ navigator.vibrate?.(ms); }catch{} }
   function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-  // Confetti & sound (lightweight)
+  // Sound
   let audioCtx=null;
-  function playBlip(){
+  function blip(){
     try{
       audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
       const o=audioCtx.createOscillator(), g=audioCtx.createGain();
@@ -251,112 +270,181 @@
       o.start(); o.stop(audioCtx.currentTime+0.22);
     }catch{}
   }
-  const fx = $('#fx'), fxCtx = fx.getContext('2d');
-  function resizeFx(){ fx.width=innerWidth*devicePixelRatio; fx.height=innerHeight*devicePixelRatio; }
-  addEventListener('resize', resizeFx); resizeFx();
-  function confetti(hue=120){
-    const N=80, parts=[];
-    for(let i=0;i<N;i++){
-      parts.push({x:Math.random()*fx.width,y:fx.height*0.3+(Math.random()*fx.height*0.1),vx:(Math.random()-0.5)*3,vy:-8-Math.random()*6,g:0.25,r:2+Math.random()*3,a:1,h:hue+Math.random()*40-20});
-    }
-    const start=performance.now();
-    function tick(t){
-      fxCtx.clearRect(0,0,fx.width,fx.height);
-      for(const p of parts){ p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.a*=0.985;
-        fxCtx.beginPath(); fxCtx.fillStyle=`hsla(${p.h},90%,70%,${p.a})`; fxCtx.arc(p.x,p.y,p.r,0,Math.PI*2); fxCtx.fill();
-      }
-      if(t-start<900) requestAnimationFrame(tick);
-      else fxCtx.clearRect(0,0,fx.width,fx.height);
-    }
-    requestAnimationFrame(tick);
-  }
-  function hexToHue(hex){
-    try{
-      const c=hex.replace('#',''); const r=parseInt(c.slice(0,2),16)/255, g=parseInt(c.slice(2,4),16)/255, b=parseInt(c.slice(4,6),16)/255;
-      const mx=Math.max(r,g,b), mn=Math.min(r,g,b), d=mx-mn; let h=0;
-      if(d===0) h=0; else if(mx===r) h=((g-b)/d)%6; else if(mx===g) h=(b-r)/d+2; else h=(r-g)/d+4;
-      h=Math.round(60*h); if(h<0) h+=360; return h;
-    }catch{ return 120; }
-  }
 
   // ---------- State ----------
-  const STORAGE_KEY='cashHabits.v5';
+  const STORAGE_KEY='cashHabits.v6';
   /**
    * {
    *  version, step, cashTotal, pointsTotal,
-   *  habits: [{id,name,emoji,color,incentive,step,points}], // points per completion
-   *  vices: [{id,name,emoji,color,cashPenalty,pointsPenalty}],
-   *  events: [{ts,date,type:'habitDone'|'habitMiss'|'vice'|'spend', habitId?, viceId?, cashDelta:number, pointsDelta:number, note?}]
+   *  habits:[{id,name,emoji,color,incentive,step,points,isSleep?:true}],
+   *  vices:[{id,name,emoji,color,cashPenalty,pointsPenalty}],
+   *  events:[{id,ts,date,type:'habitDone'|'habitMiss'|'vice'|'spend'|'sleep',
+   *           habitId?, viceId?, cashDelta:number, pointsDelta:number, meta?:any, note?}],
+   *  daily:{ [date]: { mood?:number, focus?:number, energy?:number, sleepHours?:number } }
    * }
    */
   let state = load();
+
   function load(){
     const saved = localStorage.getItem(STORAGE_KEY);
     if(saved){ try{ return JSON.parse(saved); }catch{} }
+    // defaults
+    const sleepHabit = { id:cid(), name:'Sleep', emoji:'😴', color:'#7ee787', incentive:20, step:5, points:10, isSleep:true };
     return {
-      version:5,
+      version:6,
       step:5,
       cashTotal:0,
       pointsTotal:0,
       habits:[
-        { id:cid(), name:'Mindfulness', emoji:'🧘', color:'#7ee787', incentive:20, step:5, points:10 },
-        { id:cid(), name:'Workout', emoji:'💪', color:'#8b9cf6', incentive:20, step:5, points:12 },
+        { id:cid(), name:'Meditation', emoji:'🧘', color:'#7ee787', incentive:20, step:5, points:10 },
+        { id:cid(), name:'Learning',   emoji:'📚', color:'#8b9cf6', incentive:20, step:5, points:10 },
+        { id:cid(), name:'Journal',    emoji:'📝', color:'#f7b955', incentive:20, step:5, points:10 },
+        { id:cid(), name:'Fitness',    emoji:'💪', color:'#20c997', incentive:20, step:5, points:12 },
+        { id:cid(), name:'Music',      emoji:'🎸', color:'#a78bfa', incentive:20, step:5, points:10 },
+        { id:cid(), name:'Cooking',    emoji:'🍳', color:'#ffb86b', incentive:20, step:5, points:10 },
+        sleepHabit
       ],
       vices:[
-        { id:cid(), name:'Doomscroll', emoji:'📱', color:'#ff6b6b', cashPenalty:0, pointsPenalty:10 },
+        { id:cid(), name:'Weed',        emoji:'🌿', color:'#4ade80', cashPenalty:0,   pointsPenalty:10 },
+        { id:cid(), name:'Alcohol',     emoji:'🍺', color:'#f59e0b', cashPenalty:0,   pointsPenalty:12 },
+        { id:cid(), name:'Nicotine',    emoji:'🚬', color:'#94a3b8', cashPenalty:0,   pointsPenalty:12 },
+        { id:cid(), name:'Doomscrolling',emoji:'📱', color:'#ef4444', cashPenalty:0,  pointsPenalty:10 },
+        { id:cid(), name:'Wank',        emoji:'🫣', color:'#f472b6', cashPenalty:0,   pointsPenalty:8 },
       ],
-      events:[]
+      events:[],
+      daily:{}
     };
   }
   function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
-  // ---------- Money / Points ----------
+  // ---------- Money / Points / Events ----------
   function addEvent(ev){
+    ev.id = ev.id || cid();
     state.events.push(ev);
     state.cashTotal = round2(state.cashTotal + (ev.cashDelta||0));
     state.pointsTotal = Math.round((state.pointsTotal + (ev.pointsDelta||0)));
     save(); render();
   }
 
-  // ---------- Tally Actions ----------
-  function doHabitDone(h){
-    const payout = Math.max(0, h.incentive);
-    // Cash goes up by incentive, then incentive drops by step
-    addEvent({ ts:Date.now(), date:todayKey(), type:'habitDone', habitId:h.id, cashDelta:payout, pointsDelta:(h.points||10) });
-    h.incentive = Math.max(0, round2(h.incentive - (h.step||state.step)));
-    buzz(30); playBlip(); confetti(hexToHue(h.color||'#7ee787'));
+  function undoLast(){
+    const last = state.events[state.events.length-1];
+    if(!last){ alert('Nothing to undo.'); return; }
+    // Reverse totals
+    state.cashTotal = round2(state.cashTotal - (last.cashDelta||0));
+    state.pointsTotal = Math.round((state.pointsTotal - (last.pointsDelta||0)));
+    // Revert habit incentives if applicable
+    if(last.type==='habitDone' || last.type==='habitMiss' || last.type==='sleep'){
+      const h = state.habits.find(x=>x.id===last.habitId);
+      if(h){
+        const delta = (last.meta && typeof last.meta.incentiveDelta==='number') ? last.meta.incentiveDelta : 0;
+        h.incentive = Math.max(0, round2(h.incentive - delta)); // reverse what was done
+      }
+      if(last.type==='sleep' && last.meta && typeof last.meta.hours==='number'){
+        // Remove stored sleepHours for that day
+        const d = state.daily[last.date] || (state.daily[last.date]={});
+        if(d.sleepHours !== undefined) delete d.sleepHours;
+      }
+    }
+    state.events.pop();
     save(); render();
   }
-  function doHabitMiss(h){
-    // Incentive increases by step, points go down by habit.points
+
+  // ---------- Habit/Vice actions ----------
+  function doHabitDone(h){
+    const payout = Math.max(0, h.incentive);
     const step = Math.max(1, h.step||state.step);
+    const ev = {
+      ts:Date.now(), date:todayKey(), type:'habitDone', habitId:h.id,
+      cashDelta:payout, pointsDelta:(h.points||10),
+      meta:{ incentiveDelta:-step } // we will apply decrease now; undo will add it back
+    };
+    // apply incentive change
+    h.incentive = Math.max(0, round2(h.incentive - step));
+    addEvent(ev);
+    buzz(30); blip();
+  }
+
+  function doHabitMiss(h){
+    const step = Math.max(1, h.step||state.step);
+    const ev = {
+      ts:Date.now(), date:todayKey(), type:'habitMiss', habitId:h.id,
+      cashDelta:0, pointsDelta:-(h.points||10),
+      meta:{ incentiveDelta:+step } // we increased now; undo will subtract
+    };
     h.incentive = round2(h.incentive + step);
-    addEvent({ ts:Date.now(), date:todayKey(), type:'habitMiss', habitId:h.id, cashDelta:0, pointsDelta:-(h.points||10) });
+    addEvent(ev);
     buzz(15);
   }
+
   function doVice(v){
-    // Cash penalty (subtract) and points penalty (subtract)
     const cashPen = -Math.abs(Number(v.cashPenalty||0));
     const ptsPen  = -Math.abs(Number(v.pointsPenalty||10));
     addEvent({ ts:Date.now(), date:todayKey(), type:'vice', viceId:v.id, cashDelta:cashPen, pointsDelta:ptsPen });
     buzz(15);
   }
+
   function spend(amount, note){
     const a=Number(amount)||0; if(a<=0) return;
     if(a>state.cashTotal){ alert(`You only have ${fmt.format(state.cashTotal)} available.`); return; }
     addEvent({ ts:Date.now(), date:todayKey(), type:'spend', cashDelta:-a, pointsDelta:0, note:String(note||'') });
   }
 
-  // ---------- UI: Lists ----------
+  // ---------- Sleep handling ----------
+  function setSleepHours(hours){
+    hours = Math.max(0, Math.min(12, Number(hours)||0));
+    const k = todayKey();
+    const d = state.daily[k] || (state.daily[k]={});
+    // If there was a previous sleep event today, undo it first (clean replace)
+    const idx = [...state.events].reverse().findIndex(e=>e.date===k && e.type==='sleep');
+    if(idx !== -1){
+      const realIndex = state.events.length-1-idx;
+      const prev = state.events[realIndex];
+      // reverse totals
+      state.cashTotal = round2(state.cashTotal - (prev.cashDelta||0));
+      state.pointsTotal = Math.round((state.pointsTotal - (prev.pointsDelta||0)));
+      // reverse incentive shift
+      const h = state.habits.find(x=>x.id===prev.habitId);
+      if(h && prev.meta && typeof prev.meta.incentiveDelta==='number'){
+        h.incentive = Math.max(0, round2(h.incentive - prev.meta.incentiveDelta));
+      }
+      state.events.splice(realIndex,1);
+    }
+    d.sleepHours = hours;
+    // Apply new sleep effect
+    const sleep = state.habits.find(x=>x.isSleep);
+    if(!sleep){ save(); render(); return; }
+    const step = Math.max(1, sleep.step||state.step);
+    let cashDelta=0, pointsDelta=0, incentiveDelta=0;
+    if(hours >= 8){
+      cashDelta = Math.max(0, sleep.incentive);
+      pointsDelta = (sleep.points||10);
+      incentiveDelta = -step; // decreased incentive
+      sleep.incentive = Math.max(0, round2(sleep.incentive - step));
+    }else{
+      // Miss: no cash, negative points
+      cashDelta = 0;
+      pointsDelta = -(sleep.points||10);
+      incentiveDelta = +step; // increased incentive
+      sleep.incentive = round2(sleep.incentive + step);
+    }
+    addEvent({
+      ts:Date.now(), date:k, type:'sleep', habitId:sleep.id,
+      cashDelta, pointsDelta, meta:{ hours, incentiveDelta }
+    });
+  }
+
+  // ---------- UI builders ----------
   function habitRow(h){
     const wrap=document.createElement('div');
     wrap.className='card';
     wrap.style.borderColor=h.color||'#7ee787';
+    if(h.isSleep){
+      // sleep is managed by its own card above
+      return document.createElement('div');
+    }
     wrap.innerHTML=`
       <div class="row split">
-        <div class="row" style="gap:10px">
-          <div class="big"><span class="emoji">${escapeHTML(h.emoji||'')}</span> ${escapeHTML(h.name)}</div>
-        </div>
+        <div class="big"><span class="emoji">${escapeHTML(h.emoji||'')}</span> ${escapeHTML(h.name)}</div>
         <div class="row" style="gap:8px">
           <span class="tag">${fmt.format(h.incentive)} next</span>
           <span class="tag">±$${h.step||state.step}</span>
@@ -369,9 +457,7 @@
         <button class="tallyBtn tallyUp" data-done>✅</button>
         <button class="tallyBtn tallyDown" data-miss>✖️</button>
       </div>
-      <div class="streak" aria-label="mini chart">
-        ${miniDots(h.id).join('')}
-      </div>
+      <div class="streak" aria-label="mini chart">${miniDots(h.id).join('')}</div>
     `;
     wrap.querySelector('[data-done]').onclick=()=>doHabitDone(h);
     wrap.querySelector('[data-miss]').onclick=()=>doHabitMiss(h);
@@ -379,6 +465,7 @@
     wrap.querySelector('[data-edit]').onclick=()=>openEdit('habit', h);
     return wrap;
   }
+
   function viceRow(v){
     const wrap=document.createElement('div');
     wrap.className='card';
@@ -387,7 +474,7 @@
       <div class="row split">
         <div class="big"><span class="emoji">${escapeHTML(v.emoji||'')}</span> ${escapeHTML(v.name)}</div>
         <div class="row" style="gap:8px">
-          <span class="tag">${v.cashPenalty?`−${fmt.format(v.cashPenalty)}`:'$0'} cash</span>
+          <span class="tag">${v.cashPenalty?`−${fmt.format(Math.abs(v.cashPenalty))}`:'$0'} cash</span>
           <span class="tag">−${Math.abs(v.pointsPenalty||10)} pts</span>
           <button class="btn small" data-edit>🎨 Edit</button>
           <button class="btn small" data-del>🗑️</button>
@@ -403,16 +490,26 @@
     return wrap;
   }
 
-  // ---------- Tally Modals ----------
-  const upModal = $('#upModal');
-  const upList  = $('#upList');
-  const downModal = $('#downModal');
-  const downList  = $('#downList');
-  const downMode  = $('#downMode');
+  // Mini 14-day dots per habit
+  function miniDots(habitId){
+    const dots=[];
+    for(let i=13;i>=0;i--){
+      const d=new Date(); d.setDate(d.getDate()-i); const k=todayKey(d);
+      const ev = state.events.filter(e=>e.date===k && (e.habitId===habitId) );
+      const plus = ev.some(e=>e.type==='habitDone' || (e.type==='sleep' && e.pointsDelta>0));
+      const minusOnly = !plus && ev.some(e=>e.type==='habitMiss' || (e.type==='sleep' && e.pointsDelta<0));
+      dots.push(`<span class="dot ${plus?'plus':(minusOnly?'minus':'')} ${i===0?'today':''}" title="${k}"></span>`);
+    }
+    return dots;
+  }
+
+  // ---------- Tally modals ----------
+  const upModal = $('#upModal'); const upList = $('#upList');
+  const downModal = $('#downModal'); const downList = $('#downList'); const downMode = $('#downMode');
 
   $('#tallyUp').onclick = ()=>{
-    upList.innerHTML = state.habits.length? '' : '<div class="sub">Add a habit first.</div>';
-    state.habits.forEach(h=>{
+    upList.innerHTML = '';
+    state.habits.filter(h=>!h.isSleep).forEach(h=>{
       const b=document.createElement('button');
       b.className='btn'; b.style=`border-color:${h.color};`;
       b.textContent = `${h.emoji||''} ${h.name}  · +${fmt.format(h.incentive)}  · +${h.points||10}pts`;
@@ -425,16 +522,20 @@
   function renderDownList(){
     downList.innerHTML='';
     if(downMode.value==='habit'){
-      if(!state.habits.length){ downList.innerHTML='<div class="sub">Add a habit first.</div>'; return; }
-      state.habits.forEach(h=>{
+      state.habits.filter(h=>!h.isSleep).forEach(h=>{
         const b=document.createElement('button');
         b.className='btn'; b.style=`border-color:${h.color};`;
         b.textContent = `${h.emoji||''} Missed ${h.name}  · incentive +$${h.step||state.step}  · −${h.points||10}pts`;
         b.onclick = ()=>{ downModal.close(); doHabitMiss(h); };
         downList.appendChild(b);
       });
+      // include sleep quick set (miss) as 0h shortcut
+      const sb=document.createElement('button');
+      sb.className='btn'; sb.style=`border-color:#7ee787;`;
+      sb.textContent = `😴 Sleep miss (set 0h today)`;
+      sb.onclick = ()=>{ downModal.close(); setSleepHours(0); };
+      downList.appendChild(sb);
     } else {
-      if(!state.vices.length){ downList.innerHTML='<div class="sub">Add a vice first.</div>'; return; }
       state.vices.forEach(v=>{
         const b=document.createElement('button');
         b.className='btn'; b.style=`border-color:${v.color};`;
@@ -448,23 +549,170 @@
   downMode.onchange = renderDownList;
   $('#tallyDown').onclick = ()=>{ renderDownList(); downModal.showModal(); };
 
+  // ---------- Sleep UI wiring ----------
+  const sleepRange = $('#sleepRange'), sleepVal=$('#sleepVal');
+  function updateSleepUI(){
+    const sleep = state.habits.find(x=>x.isSleep);
+    if(!sleep) return;
+    $('#sleepNext').textContent = `${fmt.format(sleep.incentive)} next`;
+    $('#sleepStep').textContent = String(sleep.step||state.step);
+    $('#sleepPts').textContent = String(sleep.points||10);
+    // set slider from saved
+    const d = state.daily[todayKey()] || {};
+    const v = typeof d.sleepHours==='number'? d.sleepHours : 0;
+    sleepRange.value = v; sleepVal.textContent = v;
+  }
+  sleepRange.addEventListener('input', ()=>{
+    sleepVal.textContent = sleepRange.value;
+  });
+  sleepRange.addEventListener('change', ()=>{
+    setSleepHours(sleepRange.value);
+  });
+
+  // ---------- Mood/Focus/Energy ----------
+  const moodRange=$('#moodRange'), focusRange=$('#focusRange'), energyRange=$('#energyRange');
+  const moodVal=$('#moodVal'), focusVal=$('#focusVal'), energyVal=$('#energyVal');
+  function loadMFE(){
+    const d = state.daily[todayKey()] || {};
+    moodRange.value = d.mood ?? 0; focusRange.value = d.focus ?? 0; energyRange.value = d.energy ?? 0;
+    moodVal.textContent = moodRange.value; focusVal.textContent = focusRange.value; energyVal.textContent = energyRange.value;
+  }
+  function saveMFE(){
+    const k=todayKey(); const d=state.daily[k] || (state.daily[k]={});
+    d.mood = Number(moodRange.value); d.focus = Number(focusRange.value); d.energy = Number(energyRange.value);
+    save();
+  }
+  [moodRange,focusRange,energyRange].forEach(r=>{
+    r.addEventListener('input', ()=>{ moodVal.textContent=moodRange.value; focusVal.textContent=focusRange.value; energyVal.textContent=energyRange.value; });
+    r.addEventListener('change', saveMFE);
+  });
+
+  // ---------- Lists & History ----------
+  function habitListRender(){
+    const list=$('#habitList'); list.innerHTML='';
+    state.habits.filter(h=>!h.isSleep).forEach(h=> list.appendChild(habitRow(h)));
+  }
+  function viceListRender(){
+    const list=$('#viceList'); list.innerHTML='';
+    state.vices.forEach(v=> list.appendChild(viceRow(v)));
+  }
+
+  function renderHistory(){
+    const k=todayKey();
+    const box = $('#todayHistory');
+    const todays = state.events.filter(e=>e.date===k).slice(-30);
+    box.innerHTML = todays.length? todays.map(e=>{
+      if(e.type==='habitDone'){
+        const h = state.habits.find(x=>x.id===e.habitId);
+        return `<div class="row split" style="margin:6px 0"><div>✅ ${escapeHTML(h?.name||'Habit')}</div><div>+${fmt.format(e.cashDelta)} · +${e.pointsDelta}pts</div></div>`;
+      } else if(e.type==='habitMiss'){
+        const h = state.habits.find(x=>x.id===e.habitId);
+        return `<div class="row split" style="margin:6px 0"><div>✖️ Missed ${escapeHTML(h?.name||'Habit')}</div><div>−${Math.abs(e.pointsDelta)}pts</div></div>`;
+      } else if(e.type==='sleep'){
+        const h = state.habits.find(x=>x.id===e.habitId);
+        const hours = e.meta?.hours ?? 0;
+        const pts = e.pointsDelta;
+        const cash = e.cashDelta? ` +${fmt.format(e.cashDelta)}` : '';
+        return `<div class="row split" style="margin:6px 0"><div>😴 Sleep ${hours}h</div><div>${cash} ${pts>=0?`· +${pts}`:`· −${Math.abs(pts)}`}pts</div></div>`;
+      } else if(e.type==='vice'){
+        const v = state.vices.find(x=>x.id===e.viceId);
+        const cash = e.cashDelta? `${e.cashDelta<0?'−':''}${fmt.format(Math.abs(e.cashDelta))}` : '$0.00';
+        return `<div class="row split" style="margin:6px 0"><div>⬇️ ${escapeHTML(v?.name||'Vice')}</div><div>${cash} · −${Math.abs(e.pointsDelta)}pts</div></div>`;
+      } else {
+        return `<div class="row split" style="margin:6px 0"><div>🛍️ ${escapeHTML(e.note||'Spent')}</div><div>−${fmt.format(Math.abs(e.cashDelta||0))}</div></div>`;
+      }
+    }).join('') : `<div class="sub">No entries yet today.</div>`;
+  }
+
+  // ---------- Graph ----------
+  function dayPoints(dateKey){
+    const pts = state.events.filter(e=>e.date===dateKey).reduce((s,e)=>s+(e.pointsDelta||0),0);
+    return pts;
+  }
+  function drawDailyGraph(){
+    const c = $('#dailyGraph'), ctx=c.getContext('2d');
+    const W=c.width, H=c.height;
+    ctx.clearRect(0,0,W,H);
+    const days=[];
+    for(let i=13;i>=0;i--){
+      const d=new Date(); d.setDate(d.getDate()-i); const k=todayKey(d);
+      days.push({k, val: dayPoints(k)});
+    }
+    const maxAbs = Math.max(10, ...days.map(d=>Math.abs(d.val)));
+    const barW = W / days.length - 6;
+    days.forEach((d, idx)=>{
+      const x = idx*(W/days.length)+3;
+      const mid=H*0.62;
+      const h = (Math.abs(d.val)/maxAbs)*(H*0.52);
+      const y = d.val>=0 ? mid - h : mid;
+      ctx.fillStyle = d.val>=0 ? getComputedStyle(document.documentElement).getPropertyValue('--green') || '#20c997'
+                               : getComputedStyle(document.documentElement).getPropertyValue('--red')   || '#ff6b6b';
+      ctx.fillRect(x, y, barW, Math.max(2, h));
+      // baseline
+      ctx.fillStyle='#4a4f65'; ctx.fillRect(x, mid, barW, 1);
+      // today thicker line
+      if(idx===days.length-1){ ctx.fillStyle='#e9ecf1'; ctx.fillRect(x, mid-1, barW, 2); }
+    });
+  }
+
   // ---------- Edit Modal ----------
+  const settingsModal = document.createElement('dialog');
+  settingsModal.innerHTML = `
+    <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
+      <h3>Settings</h3>
+      <div class="row" style="gap:10px">
+        <label class="tag">Default Step (±)</label>
+        <input id="stepInput" class="number" type="number" min="1" step="1" />
+      </div>
+      <div class="row" style="justify-content:flex-end; margin-top:10px">
+        <button class="btn" value="cancel">Close</button>
+        <button class="btn" value="submit">Save</button>
+      </div>
+    </form>`;
+  document.body.appendChild(settingsModal);
+  $('#settingsBtn').onclick = ()=>{
+    settingsModal.querySelector('#stepInput').value = state.step;
+    settingsModal.showModal();
+  };
+  settingsModal.addEventListener('close', ()=>{
+    if(settingsModal.returnValue==='submit'){
+      const n=Math.max(1, Math.floor(Number(settingsModal.querySelector('#stepInput').value)||state.step||5));
+      state.step=n; save(); render();
+    }
+  });
+
+  const editModal = document.createElement('dialog');
+  editModal.innerHTML = `
+    <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
+      <h3 id="editTitle">Edit</h3>
+      <div class="row" style="gap:8px">
+        <input id="editName" class="input" placeholder="Name" />
+        <input id="editEmoji" class="input" placeholder="Emoji" style="max-width:110px" />
+        <input id="editColor" type="color" class="input" value="#7ee787" style="max-width:110px; padding:6px 8px; height:44px" />
+      </div>
+      <div class="row" id="editMore" style="gap:8px; margin-top:8px"></div>
+      <div class="row" style="justify-content:flex-end; margin-top:10px">
+        <button class="btn" value="cancel">Cancel</button>
+        <button class="btn" value="submit">Save</button>
+      </div>
+    </form>`;
+  document.body.appendChild(editModal);
   let editObj=null, editType='habit';
-  const editModal = $('#editModal');
+
   function openEdit(type, obj){
     editType=type; editObj=obj;
-    $('#editTitle').textContent = type==='habit' ? 'Edit Habit' : 'Edit Vice';
-    $('#editName').value = obj.name||'';
-    $('#editEmoji').value = obj.emoji||'';
-    $('#editColor').value = obj.color|| (type==='habit'?'#7ee787':'#ff6b6b');
-    const more = $('#editMore'); more.innerHTML='';
+    const more = editModal.querySelector('#editMore'); more.innerHTML='';
+    editModal.querySelector('#editTitle').textContent = type==='habit' ? 'Edit Habit' : 'Edit Vice';
+    editModal.querySelector('#editName').value = obj.name||'';
+    editModal.querySelector('#editEmoji').value = obj.emoji||'';
+    editModal.querySelector('#editColor').value = obj.color|| (type==='habit'?'#7ee787':'#ff6b6b');
     if(type==='habit'){
       more.innerHTML = `
         <input id="editIncentive" class="number" type="number" min="0" step="1" placeholder="Current reward $" value="${obj.incentive||0}" />
         <input id="editStep" class="number" type="number" min="1" step="1" placeholder="Step ±$" value="${obj.step||state.step}" />
         <input id="editPts" class="number" type="number" step="1" placeholder="Points per completion" value="${obj.points||10}" />
       `;
-    } else {
+    }else{
       more.innerHTML = `
         <input id="editPenaltyCash" class="number" type="number" step="1" placeholder="Cash penalty $" value="${obj.cashPenalty||0}" />
         <input id="editPenaltyPts" class="number" type="number" step="1" placeholder="Points penalty" value="${obj.pointsPenalty||10}" />
@@ -474,16 +722,16 @@
   }
   editModal.addEventListener('close', ()=>{
     if(editModal.returnValue==='submit' && editObj){
-      editObj.name = String($('#editName').value||editObj.name);
-      editObj.emoji = String($('#editEmoji').value||'').slice(0,2);
-      editObj.color = $('#editColor').value || editObj.color;
+      editObj.name = String(editModal.querySelector('#editName').value||editObj.name);
+      editObj.emoji = String(editModal.querySelector('#editEmoji').value||'').slice(0,2);
+      editObj.color = editModal.querySelector('#editColor').value || editObj.color;
       if(editType==='habit'){
-        const n1=Number($('#editIncentive').value); if(isFinite(n1)&&n1>=0) editObj.incentive=round2(n1);
-        const n2=Number($('#editStep').value); if(isFinite(n2)&&n2>=1) editObj.step=Math.round(n2);
-        const n3=Number($('#editPts').value); if(isFinite(n3)) editObj.points=Math.round(n3);
+        const n1=Number(editModal.querySelector('#editIncentive').value); if(isFinite(n1)&&n1>=0) editObj.incentive=round2(n1);
+        const n2=Number(editModal.querySelector('#editStep').value); if(isFinite(n2)&&n2>=1) editObj.step=Math.round(n2);
+        const n3=Number(editModal.querySelector('#editPts').value); if(isFinite(n3)) editObj.points=Math.round(n3);
       }else{
-        const p1=Number($('#editPenaltyCash').value); if(isFinite(p1)) editObj.cashPenalty=Math.round(p1);
-        const p2=Number($('#editPenaltyPts').value); if(isFinite(p2)) editObj.pointsPenalty=Math.round(p2);
+        const p1=Number(editModal.querySelector('#editPenaltyCash').value); if(isFinite(p1)) editObj.cashPenalty=Math.round(p1);
+        const p2=Number(editModal.querySelector('#editPenaltyPts').value); if(isFinite(p2)) editObj.pointsPenalty=Math.round(p2);
       }
       save(); render();
     }
@@ -512,9 +760,66 @@
     save(); render();
   };
 
-  // ---------- Spend / Settings ----------
+  // ---------- Export ----------
+  function download(filename, text){
+    const blob = new Blob([text], {type:'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+  function exportJSON(){
+    download(`cash-habits-${todayKey()}.json`, JSON.stringify(state, null, 2));
+  }
+  function exportCSV(){
+    const headers = ['id','ts','date','type','name','cashDelta','pointsDelta','note','sleepHours','mood','focus','energy'];
+    const lines = [headers.join(',')];
+    const daily = state.daily || {};
+    for(const e of state.events){
+      const d = daily[e.date] || {};
+      let name = '';
+      if(e.type==='habitDone' || e.type==='habitMiss' || e.type==='sleep'){
+        const h = state.habits.find(x=>x.id===e.habitId); name = h?.name||'';
+      } else if(e.type==='vice'){
+        const v = state.vices.find(x=>x.id===e.viceId); name = v?.name||'';
+      } else { name = 'Spend'; }
+      const row = [
+        e.id, e.ts, e.date, e.type, name.replace(/,/g,';'),
+        e.cashDelta||0, e.pointsDelta||0, (e.note||'').replace(/,/g,';'),
+        (e.type==='sleep'?(e.meta?.hours??''):''), d.mood??'', d.focus??'', d.energy??''
+      ].join(',');
+      lines.push(row);
+    }
+    download(`cash-habits-events-${todayKey()}.csv`, lines.join('\n'));
+  }
+
+  // ---------- History / Graph render ----------
+  function render(){
+    $('#cashTotal').textContent = fmt.format(state.cashTotal);
+    $('#pointsTotal').textContent = String(state.pointsTotal);
+    $('#todayText').textContent = niceDate(new Date());
+    $('#stepDisplay').textContent = `$${state.step}`;
+    habitListRender();
+    viceListRender();
+    renderHistory();
+    drawDailyGraph();
+    loadMFE();
+    updateSleepUI();
+  }
+
+  // ---------- Wire top actions ----------
   const spendModal = $('#spendModal');
-  $('#spendBtn').onclick = ()=>spendModal.showModal();
+  document.getElementById('exportJsonBtn').onclick = exportJSON;
+  document.getElementById('exportCsvBtn').onclick = exportCSV;
+  document.getElementById('undoBtn').onclick = undoLast;
+
+  // Spend flow
+  const spendBtn = document.createElement('button');
+  document.getElementById('settingsBtn').insertAdjacentElement('beforebegin', spendBtn);
+  document.getElementById('settingsBtn').previousElementSibling?.remove(); // cleanup if dup
+  document.getElementById('settingsBtn').insertAdjacentElement('beforebegin', document.getElementById('spendBtn'));
+  document.getElementById('spendBtn').onclick = ()=>spendModal.showModal();
   spendModal.addEventListener('close', ()=>{
     if(spendModal.returnValue==='submit'){
       spend($('#spendAmt').value, $('#spendNote').value);
@@ -522,124 +827,7 @@
     }
   });
 
-  const settingsModal = document.createElement('dialog');
-  settingsModal.innerHTML = `
-    <form method="dialog" class="modal card" style="min-width:min(92vw,520px)">
-      <h3>Settings</h3>
-      <div class="row" style="gap:10px">
-        <label class="tag">Default Step (±)</label>
-        <input id="stepInput" class="number" type="number" min="1" step="1" />
-      </div>
-      <div class="row" style="justify-content:flex-end; margin-top:10px">
-        <button class="btn" value="cancel">Close</button>
-        <button class="btn" value="submit">Save</button>
-      </div>
-    </form>`;
-  document.body.appendChild(settingsModal);
-  $('#settingsBtn').onclick = ()=>{
-    settingsModal.querySelector('#stepInput').value = state.step;
-    settingsModal.showModal();
-  };
-  settingsModal.addEventListener('close', ()=>{
-    if(settingsModal.returnValue==='submit'){
-      const n=Math.max(1, Math.floor(Number(settingsModal.querySelector('#stepInput').value)||state.step||5));
-      state.step=n; save(); render();
-    }
-  });
-
-  // ---------- History / Graph ----------
-  function renderHistory(){
-    const k=todayKey();
-    const box = $('#todayHistory');
-    const todays = state.events.filter(e=>e.date===k).slice(-20);
-    box.innerHTML = todays.length? todays.map(e=>{
-      if(e.type==='habitDone'){
-        const h = state.habits.find(x=>x.id===e.habitId);
-        return `<div class="row split" style="margin:6px 0"><div>✅ ${escapeHTML(h?.name||'Habit')}</div><div>+${fmt.format(e.cashDelta)} · +${e.pointsDelta}pts</div></div>`;
-      } else if(e.type==='habitMiss'){
-        const h = state.habits.find(x=>x.id===e.habitId);
-        return `<div class="row split" style="margin:6px 0"><div>✖️ Missed ${escapeHTML(h?.name||'Habit')}</div><div>+${fmt.format(0)} · −${Math.abs(e.pointsDelta)}pts</div></div>`;
-      } else if(e.type==='vice'){
-        const v = state.vices.find(x=>x.id===e.viceId);
-        const cash = e.cashDelta? `${e.cashDelta<0?'−':''}${fmt.format(Math.abs(e.cashDelta))}` : '$0.00';
-        return `<div class="row split" style="margin:6px 0"><div>⬇️ ${escapeHTML(v?.name||'Vice')}</div><div>${cash} · −${Math.abs(e.pointsDelta)}pts</div></div>`;
-      } else {
-        return `<div class="row split" style="margin:6px 0"><div>🛍️ ${escapeHTML(e.note||'Spent')}</div><div>−${fmt.format(Math.abs(e.cashDelta||0))}</div></div>`;
-      }
-    }).join('') : `<div class="sub">No entries yet today.</div>`;
-  }
-
-  function dayPoints(dateKey){
-    return state.events.filter(e=>e.date===dateKey).reduce((s,e)=>s+(e.pointsDelta||0),0);
-  }
-  function drawDailyGraph(){
-    const c = $('#dailyGraph'), ctx=c.getContext('2d');
-    const W=c.width, H=c.height;
-    ctx.clearRect(0,0,W,H);
-    const days=[];
-    for(let i=13;i>=0;i--){
-      const d=new Date(); d.setDate(d.getDate()-i); const k=todayKey(d);
-      days.push({k, val: dayPoints(k)});
-    }
-    const maxAbs = Math.max(10, ...days.map(d=>Math.abs(d.val)));
-    const barW = W / days.length - 6;
-    ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.fillStyle='#aab';
-    days.forEach((d, idx)=>{
-      const x = idx*(W/days.length)+3;
-      const mid=H*0.62;
-      const h = (Math.abs(d.val)/maxAbs)*(H*0.52);
-      const y = d.val>=0 ? mid - h : mid;
-      ctx.fillStyle = d.val>=0 ? getComputedStyle(document.documentElement).getPropertyValue('--green') || '#20c997'
-                               : getComputedStyle(document.documentElement).getPropertyValue('--red')   || '#ff6b6b';
-      ctx.fillRect(x, y, barW, Math.max(2, h));
-      // today marker
-      if(idx===days.length-1){
-        ctx.fillStyle='#e9ecf1'; ctx.fillRect(x, mid-1, barW, 2);
-      } else {
-        ctx.fillStyle='#4a4f65'; ctx.fillRect(x, mid, barW, 1);
-      }
-    });
-  }
-
-  // Mini 14-day dots per habit
-  function miniDots(habitId){
-    const dots=[];
-    for(let i=13;i>=0;i--){
-      const d=new Date(); d.setDate(d.getDate()-i); const k=todayKey(d);
-      const ev = state.events.filter(e=>e.date===k && (e.habitId===habitId) );
-      const plus = ev.some(e=>e.type==='habitDone');
-      const minusOnly = !plus && ev.some(e=>e.type==='habitMiss');
-      dots.push(`<span class="dot ${plus?'plus':(minusOnly?'minus':'')} ${i===0?'today':''}" title="${k}"></span>`);
-    }
-    return dots;
-  }
-
-  // ---------- Render ----------
-  function render(){
-    $('#cashTotal').textContent = fmt.format(state.cashTotal);
-    $('#pointsTotal').textContent = String(state.pointsTotal);
-    $('#todayText').textContent = niceDate(new Date());
-    $('#stepDisplay').textContent = `$${state.step}`;
-
-    // Habits
-    const hList = $('#habitList'); hList.innerHTML='';
-    state.habits.forEach(h=> hList.appendChild(habitRow(h)));
-
-    // Vices
-    const vList = $('#viceList'); vList.innerHTML='';
-    state.vices.forEach(v=> vList.appendChild(viceRow(v)));
-
-    // History + graph
-    renderHistory();
-    drawDailyGraph();
-  }
-
-  // ---------- Spend ----------
-  $('#spendModal').addEventListener('close', ()=>{
-    // handled earlier
-  });
-
-  // ---------- Init ----------
+  // Initial render
   render();
 })();
 </script>
