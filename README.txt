@@ -1,21 +1,27 @@
-Now Mode — Downloadable Bundle
+Cash Habit — Downloadable Bundle
 =================================
-
 Files:
-- index.html  — the UI (no glow, customizable)
-- app.js      — logic (localStorage, CRUD, chart, undo/export)
+- index.html  — UI for Cash Habit (balance-first)
+- app.js      — logic (localStorage, catalog CRUD, chart, undo/export, settings)
 
 How to use:
 1) Put both files in the same folder.
-2) Open index.html in your browser (Safari/Chrome).
-3) Add to Home Screen on iOS for PWA-like behavior.
-4) Click ⚙︎ Manage to add/edit/delete habits & vices.
-5) Use ▲/▼ and Apply to log actions; sliders auto-save for today.
-6) Export to download a text file with CSVs (actions + metrics).
+2) Open index.html in your browser (Safari/Chrome). Add to Home Screen if you want.
+3) Press ⚙︎ Manage to add/edit/delete habits & vices.
+4) Press ▲ or ▼ to open the selector, then Apply to log.
+5) Settings ⚙︎ lets you set a starting balance and currency symbol.
+6) Export downloads a CSV of all logs (timestamp, date, type, name, cash, points).
 
-Storage:
-- nowmode.logs    — action records
-- nowmode.metrics — per-day sliders (sleep/mood/energy/focus)
-- nowmode.catalog — your custom items
+Storage keys:
+- cashhabit.logs
+- cashhabit.catalog
+- cashhabit.settings
 
-Note: Chart.js is loaded via CDN; viewing offline requires prior cache or internet.
+Migration:
+- If you previously used Now Mode, the app will import `nowmode.logs` and `nowmode.catalog` on first run (it won't delete them).
+
+Chart:
+- Bars show daily net cash (green/red).
+- Line shows cumulative balance (applies starting balance + all logs).
+
+Note: Chart.js is loaded from a CDN.

@@ -3,299 +3,156 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Now Mode</title>
+  <title>Cash Habit</title>
   <meta name="theme-color" content="#111" />
-
-  <!-- Chart.js 2.x -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
-
   <style>
-    /* ===== Base tokens ===== */
-    :root{
-      --bg:#111; --panel:#171717; --text:#eee; --muted:#9aa0a6;
-      --border:#242424;
-
-      /* Metrics defaults (you can change these) */
-      --sleep:#3aa3ff;
-      --mood:#ffd44d;
-      --energy:#ffa04d;
-      --focus:#ffffff;
-
-      /* Global defaults for stacks (each item can override below) */
-      --habit:#00c853;  /* green */
-      --vice:#ff5252;   /* red */
-    }
-
+    :root{ --bg:#111; --panel:#171717; --text:#eee; --muted:#9aa0a6; --border:#242424; --pos:#00c853; --neg:#ff5252; }
     html,body{height:100%}
-    body{
-      margin:0; background:var(--bg); color:var(--text);
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
-      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
-    }
+    body{ margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
     .wrap{max-width:980px;margin:18px auto;padding:16px}
-
-    .card{
-      background:var(--panel);
-      border:1px solid var(--border);
-      border-radius:16px;
-      padding:16px;
-    }
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px}
     h1{font-size:18px;margin:0 0 10px 0}
     .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-
-    /* ===== Tally + controls (no glow) ===== */
-    .tally{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-    .score{
-      min-width:260px; flex:1;
-      background:#121212; border:1px solid var(--border); border-radius:14px; padding:14px;
-    }
-    .score .label{font-size:12px;color:var(--muted);margin-bottom:6px}
-    .score .value{font-size:32px;font-weight:700;letter-spacing:.4px}
-    .bar{margin-top:10px;height:12px;border-radius:999px;background:#1a1a1a;position:relative}
-    .bar>.fill{
-      width:50%; height:100%; border-radius:inherit;
-      background: linear-gradient(90deg, #00c853, #00acc1);
-      transition:width .25s ease;
-    }
-
+    .header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .balance{ flex:1; min-width:260px; background:#121212;border:1px solid var(--border);border-radius:14px;padding:14px; }
+    .balance .label{font-size:12px;color:var(--muted)}
+    .balance .value{font-size:32px;font-weight:800;letter-spacing:.4px}
+    .sub{font-size:12px;color:var(--muted);margin-top:4px}
     .actions{display:flex;gap:10px;align-items:center}
-    .btn{
-      appearance:none; -webkit-appearance:none; cursor:pointer;
-      border:1px solid var(--border); background:#141414; color:#fff;
-      padding:10px 14px; border-radius:12px; font-weight:600;
-    }
+    .btn{appearance:none;-webkit-appearance:none;cursor:pointer;border:1px solid var(--border);background:#141414;color:#fff;padding:10px 14px;border-radius:12px;font-weight:600}
     .btn:active{transform:translateY(1px)}
     .btn.primary{background:#142016}
     .btn.danger{background:#1f1414}
-
-    .chip{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:6px 10px;border-radius:10px;border:1px solid var(--border);background:#121212;font-size:13px
-    }
-    .chip .dot{width:10px;height:10px;border-radius:50%}
-    .chip.habit .dot{background:var(--habit)}
-    .chip.vice  .dot{background:var(--vice)}
-
-    /* ===== Sliders (no glow; big thumbs; per-metric color) ===== */
-    .slider{flex:1;min-width:220px;display:flex;flex-direction:column;gap:6px}
-    .slider label{font-size:12px;color:var(--muted)}
-    .slider input[type=range]{-webkit-appearance:none;width:100%;height:10px;background:#1f1f1f;border-radius:8px;outline:none}
-    .slider input[type=range]::-webkit-slider-thumb{
-      -webkit-appearance:none;width:22px;height:22px;border-radius:50%;
-      background:currentColor;border:2px solid #fff;margin-top:-6px;cursor:pointer;
-    }
-    .slider input[type=range]::-moz-range-thumb{
-      width:22px;height:22px;border-radius:50%;background:currentColor;border:2px solid #fff;cursor:pointer;
-    }
-    .slider.sleep  input{color:var(--sleep)}
-    .slider.mood   input{color:var(--mood)}
-    .slider.energy input{color:var(--energy)}
-    .slider.focus  input{color:var(--focus)}
-
-    /* ===== Chart canvas ===== */
     .canvas-wrap{background:#0e0e0e;border:1px solid var(--border);border-radius:16px;padding:10px}
     canvas{display:block;width:100%}
-
-    /* ===== Bottom sheet (selector) ===== */
-    .sheet{
-      position:fixed;left:0;right:0;bottom:-100%;
-      background:#131317;border-top:1px solid var(--border);
-      border-top-left-radius:16px;border-top-right-radius:16px;
-      padding:14px 16px 20px;z-index:50;transition:bottom .25s ease;
-    }
+    .sheet{ position:fixed;left:0;right:0;bottom:-100%;background:#131317;border-top:1px solid var(--border); border-top-left-radius:16px;border-top-right-radius:16px;padding:14px 16px 20px;z-index:50;transition:bottom .25s ease;}
     .sheet.open{bottom:0}
     .sheet .grab{width:44px;height:4px;border-radius:999px;background:#2a2a2f;margin:4px auto 12px}
     .sheet h2{font-size:16px;margin:0 0 8px 0}
     .tabbar{display:flex;gap:8px;margin-bottom:8px}
-    .tab{
-      flex:1;text-align:center;padding:8px 10px;border-radius:10px;cursor:pointer;
-      border:1px solid var(--border);background:#0f0f12;font-weight:600
-    }
+    .tab{flex:1;text-align:center;padding:8px 10px;border-radius:10px;cursor:pointer;border:1px solid var(--border);background:#0f0f12;font-weight:600}
     .tab.active{background:#15151a}
-
     .list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-    .item{
-      border:1px solid var(--border);border-radius:12px;padding:10px;cursor:pointer;background:#0f0f12;
-      display:flex;align-items:center;justify-content:space-between;gap:8px;
-    }
+    .item{border:1px solid var(--border);border-radius:12px;padding:10px;cursor:pointer;background:#0f0f12;display:flex;align-items:center;justify-content:space-between;gap:8px}
     .item .name{font-size:14px}
     .item .meta{font-size:12px;color:var(--muted)}
-    .item.habit{color:var(--habit)}
-    .item.vice{ color:var(--vice)}
-
-    .sheet .footer{display:flex;gap:10px;margin-top:12px}
-    .btn.secondary{background:#121214}
-
-    /* ===== Manage (CRUD) Sheet ===== */
+    .item.habit{color:var(--pos)} .item.vice{color:var(--neg)}
+    .sheet .footer{display:flex;gap:10px;margin-top:12px} .btn.secondary{background:#121214}
     .manage .list .item button{padding:6px 10px;border-radius:8px}
     .manage h3{font-size:14px;margin:6px 0}
-    @media (max-width:560px){ .list{grid-template-columns:1fr} }
+    .settings .row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .input{display:flex;flex-direction:column;gap:6px}
+    .input input{background:#121212;border:1px solid #242424;border-radius:10px;color:#fff;padding:10px}
+    .input label{font-size:12px;color:#9aa0a6}
+    @media (max-width:560px){ .list{grid-template-columns:1fr} .settings .row2{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
   <div class="wrap">
-
-    <!-- ===== Tally / Controls ===== -->
     <div class="card" style="margin-bottom:16px">
-      <div class="tally">
-        <div class="score">
-          <div class="label">Dopamine / Mindfulness Tally</div>
-          <div class="value" id="tallyValue">0</div>
-          <div class="bar"><div class="fill" id="tallyFill" style="width:50%"></div></div>
+      <div class="header">
+        <div class="balance">
+          <div class="label">Cash Balance</div>
+          <div class="value" id="cashBalance">$0</div>
+          <div class="sub">
+            <span id="todayDelta">Today: $0</span> •
+            <span id="pointsToday">Points today: 0</span>
+          </div>
         </div>
-
         <div class="actions">
-          <button class="btn primary" id="btnUp"   aria-label="Add habit (open selector)">▲ Up</button>
-          <button class="btn danger"  id="btnDown" aria-label="Add vice (open selector)">▼ Down</button>
-          <button class="btn" id="btnUndo" aria-label="Undo last action">⟲ Undo</button>
-          <button class="btn" id="btnExport" aria-label="Export data">⇩ Export</button>
-          <button class="btn" id="btnManage" aria-label="Manage items">⚙︎ Manage</button>
-        </div>
-
-        <div class="row">
-          <div class="chip habit"><span class="dot"></span><span>Habits</span></div>
-          <div class="chip vice"><span class="dot"></span><span>Vices</span></div>
-        </div>
-      </div>
-
-      <!-- Sliders -->
-      <div class="row" style="margin-top:12px">
-        <div class="slider sleep">
-          <label for="sleepSlider">Sleep (hrs)</label>
-          <input id="sleepSlider" type="range" min="0" max="12" value="7">
-        </div>
-        <div class="slider mood">
-          <label for="moodSlider">Mood (0–10)</label>
-          <input id="moodSlider" type="range" min="0" max="10" value="6">
-        </div>
-        <div class="slider energy">
-          <label for="energySlider">Energy (0–10)</label>
-          <input id="energySlider" type="range" min="0" max="10" value="6">
-        </div>
-        <div class="slider focus">
-          <label for="focusSlider">Focus (0–10)</label>
-          <input id="focusSlider" type="range" min="0" max="10" value="6">
+          <button class="btn primary" id="btnUp">▲ Up</button>
+          <button class="btn danger"  id="btnDown">▼ Down</button>
+          <button class="btn" id="btnUndo">⟲ Undo</button>
+          <button class="btn" id="btnExport">⇩ Export</button>
+          <button class="btn" id="btnManage">⚙︎ Manage</button>
+          <button class="btn" id="btnSettings">⚙︎ Settings</button>
         </div>
       </div>
     </div>
-
-    <!-- ===== Trends ===== -->
     <div class="card">
-      <h1>Trends</h1>
+      <h1>Cash Over Time</h1>
       <div class="canvas-wrap">
-        <canvas id="trendChart" height="300"></canvas>
+        <canvas id="trendChart" height="320"></canvas>
       </div>
     </div>
   </div>
 
-  <!-- ===== Habit/Vice Selector (Bottom Sheet) ===== -->
   <div class="sheet" id="selectorSheet" aria-hidden="true">
     <div class="grab"></div>
     <h2 id="sheetTitle">Select Habit or Vice</h2>
-
     <div class="tabbar">
-      <div class="tab active" id="tabHabits" role="button" aria-controls="listHabits">Habits</div>
-      <div class="tab" id="tabVices" role="button" aria-controls="listVices">Vices</div>
+      <div class="tab active" id="tabHabits">Habits</div>
+      <div class="tab" id="tabVices">Vices</div>
     </div>
-
-    <!-- Populated dynamically from catalog -->
     <div class="list" id="listHabits"></div>
     <div class="list" id="listVices" style="display:none"></div>
-
     <div class="footer">
       <button class="btn secondary" id="sheetCancel">Cancel</button>
       <button class="btn primary" id="sheetApply">Apply</button>
     </div>
   </div>
 
-  <!-- ===== Manage (CRUD) Sheet ===== -->
   <div class="sheet manage" id="manageSheet" aria-hidden="true">
     <div class="grab"></div>
     <h2>Manage Habits & Vices</h2>
-
     <form id="itemForm" class="row" style="margin-top:8px">
-      <div style="display:flex;flex-direction:column;gap:6px;min-width:160px">
-        <label for="itemName" style="font-size:12px;color:#9aa0a6">Name</label>
-        <input id="itemName" type="text" placeholder="e.g., Cold Shower" required
-               style="background:#121212;border:1px solid #242424;border-radius:10px;color:#fff;padding:10px">
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px;min-width:120px">
-        <label for="itemType" style="font-size:12px;color:#9aa0a6">Type</label>
-        <select id="itemType" required
-                style="background:#121212;border:1px solid #242424;border-radius:10px;color:#fff;padding:10px">
-          <option value="habit">Habit</option>
-          <option value="vice">Vice</option>
-        </select>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px;min-width:120px">
-        <label for="itemPoints" style="font-size:12px;color:#9aa0a6">Points (±)</label>
-        <input id="itemPoints" type="number" step="1" value="1" required
-               style="background:#121212;border:1px solid #242424;border-radius:10px;color:#fff;padding:10px">
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px;min-width:120px">
-        <label for="itemCash" style="font-size:12px;color:#9aa0a6">Cash (±)</label>
-        <input id="itemCash" type="number" step="1" value="1" required
-               style="background:#121212;border:1px solid #242424;border-radius:10px;color:#fff;padding:10px">
-      </div>
+      <div class="input"><label for="itemName">Name</label><input id="itemName" type="text" placeholder="e.g., Cold Shower" required></div>
+      <div class="input"><label for="itemType">Type</label><select id="itemType" required><option value="habit">Habit</option><option value="vice">Vice</option></select></div>
+      <div class="input"><label for="itemCash">Cash (±)</label><input id="itemCash" type="number" step="1" value="1" required></div>
+      <div class="input"><label for="itemPoints">Points (±)</label><input id="itemPoints" type="number" step="1" value="1" required></div>
       <div style="display:flex;align-items:flex-end;gap:10px">
         <button class="btn primary" type="submit" id="btnSaveItem">Save</button>
         <button class="btn" type="button" id="btnNewItem">New</button>
         <button class="btn secondary" type="button" id="btnCloseManage">Close</button>
       </div>
     </form>
-
     <div style="height:10px"></div>
     <h3>Items</h3>
     <div id="catalogList" class="list"></div>
   </div>
 
-  <!-- Logic -->
+  <div class="sheet settings" id="settingsSheet" aria-hidden="true">
+    <div class="grab"></div>
+    <h2>Settings</h2>
+    <div class="row2 row" style="margin-top:8px">
+      <div class="input"><label for="currencySymbol">Currency Symbol</label><input id="currencySymbol" type="text" value="$" maxlength="3"></div>
+      <div class="input"><label for="startingBalance">Starting Balance</label><input id="startingBalance" type="number" step="1" value="0"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <button class="btn primary" id="btnSaveSettings">Save</button>
+      <button class="btn secondary" id="btnCloseSettings">Close</button>
+    </div>
+  </div>
+
   <script src="app.js"></script>
-
-  <!-- Minimal wiring for selector sheet (kept small; app.js handles data) -->
   <script>
-    const sheet = document.getElementById('selectorSheet');
-    const tabH  = document.getElementById('tabHabits');
-    const tabV  = document.getElementById('tabVices');
-    const listH = document.getElementById('listHabits');
-    const listV = document.getElementById('listVices');
-    const btnUp = document.getElementById('btnUp');
-    const btnDown = document.getElementById('btnDown');
-    const sheetTitle = document.getElementById('sheetTitle');
-
+    const sheet=document.getElementById('selectorSheet');
+    const tabH=document.getElementById('tabHabits');
+    const tabV=document.getElementById('tabVices');
+    const listH=document.getElementById('listHabits');
+    const listV=document.getElementById('listVices');
+    const sheetTitle=document.getElementById('sheetTitle');
     function openSheet(type){
-      sheet.classList.add('open');
-      sheet.setAttribute('aria-hidden','false');
-      if(type==='habit'){
-        tabH.classList.add('active'); tabV.classList.remove('active');
-        listH.style.display='grid';    listV.style.display='none';
-        sheetTitle.textContent = 'Select Habit';
-      }else{
-        tabV.classList.add('active'); tabH.classList.remove('active');
-        listV.style.display='grid';    listH.style.display='none';
-        sheetTitle.textContent = 'Select Vice';
-      }
+      sheet.classList.add('open'); sheet.setAttribute('aria-hidden','false');
+      if(type==='habit'){ tabH.classList.add('active'); tabV.classList.remove('active'); listH.style.display='grid'; listV.style.display='none'; sheetTitle.textContent='Select Habit'; }
+      else{ tabV.classList.add('active'); tabH.classList.remove('active'); listV.style.display='grid'; listH.style.display='none'; sheetTitle.textContent='Select Vice'; }
     }
-    function closeSheet(){
-      sheet.classList.remove('open');
-      sheet.setAttribute('aria-hidden','true');
-    }
-    tabH.addEventListener('click', ()=>openSheet('habit'));
-    tabV.addEventListener('click', ()=>openSheet('vice'));
-    btnUp.addEventListener('click', ()=>openSheet('habit'));
-    btnDown.addEventListener('click', ()=>openSheet('vice'));
-    document.getElementById('sheetCancel').addEventListener('click', closeSheet);
-    document.getElementById('sheetApply').addEventListener('click', closeSheet);
-
-    // Expose selected choice for app.js to read
-    document.getElementById('listHabits').addEventListener('click', e=>{
-      const el = e.target.closest('.item'); if(!el) return;
-      window.selectedChoice = el.dataset; // {type,name,points,cash}
-    });
-    document.getElementById('listVices').addEventListener('click', e=>{
-      const el = e.target.closest('.item'); if(!el) return;
-      window.selectedChoice = el.dataset;
-    });
+    function closeSheet(){ sheet.classList.remove('open'); sheet.setAttribute('aria-hidden','true'); }
+    document.getElementById('btnUp').addEventListener('click',()=>openSheet('habit'));
+    document.getElementById('btnDown').addEventListener('click',()=>openSheet('vice'));
+    tabH.addEventListener('click',()=>openSheet('habit'));
+    tabV.addEventListener('click',()=>openSheet('vice'));
+    document.getElementById('sheetCancel').addEventListener('click',closeSheet);
+    document.getElementById('sheetApply').addEventListener('click',closeSheet);
+    listH.addEventListener('click',e=>{const el=e.target.closest('.item'); if(!el) return; window.selectedChoice=el.dataset;});
+    listV.addEventListener('click',e=>{const el=e.target.closest('.item'); if(!el) return; window.selectedChoice=el.dataset;});
+    const manageSheet=document.getElementById('manageSheet');
+    document.getElementById('btnManage').addEventListener('click',()=>{manageSheet.classList.add('open'); manageSheet.setAttribute('aria-hidden','false');});
+    document.getElementById('btnCloseManage').addEventListener('click',()=>{manageSheet.classList.remove('open'); manageSheet.setAttribute('aria-hidden','true');});
+    const settingsSheet=document.getElementById('settingsSheet');
+    document.getElementById('btnSettings').addEventListener('click',()=>{settingsSheet.classList.add('open'); settingsSheet.setAttribute('aria-hidden','false');});
+    document.getElementById('btnCloseSettings').addEventListener('click',()=>{settingsSheet.classList.remove('open'); settingsSheet.setAttribute('aria-hidden','true');});
   </script>
 </body>
 </html>
